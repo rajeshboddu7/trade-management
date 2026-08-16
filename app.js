@@ -549,6 +549,15 @@ function currentPriceCell(t) {
   return `<span class="${toneClass}">${fmtNum(c.price)}</span>`;
 }
 
+function unrealizedPctCell(t) {
+  if (t.pnl != null) return '—';
+  const c = currentPriceCache[t.symbol];
+  if (!c || c.loading) return '<span class="pill">…</span>';
+  if (c.error) return `<span class="pill" title="${esc(c.error)}">—</span>`;
+  const pct = (t.side === 'short' ? (t.entry - c.price) : (c.price - t.entry)) / t.entry * 100;
+  return `<b class="${cls(pct)}">${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%</b>`;
+}
+
 function renderTrades() {
   const list = filteredTrades();
   $('#tradesEmpty').hidden = list.length > 0;
@@ -561,6 +570,7 @@ function renderTrades() {
       <td class="num">${fmtNum(t.qty)}</td>
       <td class="num">${fmtNum(t.entry)}</td>
       <td class="num">${currentPriceCell(t)}</td>
+      <td class="num">${unrealizedPctCell(t)}</td>
       <td class="num">${t.exit == null ? '—' : fmtNum(t.exit)}</td>
       <td class="num">${t.days == null ? '—' : `${t.days}d${t.pnl == null ? ' (open)' : ''}`}</td>
       <td class="num ${t.pnl == null ? '' : cls(t.pnl)}">${
