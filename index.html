@@ -18,6 +18,7 @@
     <button class="tab" data-view="trades">Trades</button>
     <button class="tab" data-view="positions">Positions</button>
     <button class="tab" data-view="stats">Stats</button>
+    <button class="tab" data-view="tradescheck">Trades Check</button>
   </nav>
   <div class="topbar-actions">
     <span class="auth-user" id="authUserLabel" hidden></span>
@@ -245,6 +246,35 @@
     <div class="panel">
       <h3>By weekday</h3>
       <div class="table-wrap compact"><table class="tbl"><tbody id="byWeekday"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ===================== TRADES CHECK ===================== -->
+  <section class="view" id="view-tradescheck">
+    <div class="stat-grid" id="tcSummaryGrid"></div>
+
+    <div class="panel">
+      <h3>Rule 1 — Unrealized loss should stay under 10%</h3>
+      <div class="table-wrap compact"><table class="tbl"><tbody id="tcRule1Body"></tbody></table></div>
+      <div class="empty" id="tcRule1Empty" hidden>No violations.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Rule 2 — Exit if loss exceeds 2% within 2 days of entry</h3>
+      <div class="table-wrap compact"><table class="tbl"><tbody id="tcRule2Body"></tbody></table></div>
+      <div class="empty" id="tcRule2Empty" hidden>No violations.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Rule 3 — Add to position if immediately green</h3>
+      <div class="table-wrap compact"><table class="tbl"><tbody id="tcRule3Body"></tbody></table></div>
+      <div class="empty" id="tcRule3Empty" hidden>No candidates right now.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Rule 4 — Capital cap: $20,000 per symbol</h3>
+      <div class="table-wrap compact"><table class="tbl"><tbody id="tcRule4Body"></tbody></table></div>
+      <div class="empty" id="tcRule4Empty" hidden>Nothing over the cap.</div>
     </div>
   </section>
 </main>

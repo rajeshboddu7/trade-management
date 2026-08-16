@@ -296,6 +296,7 @@ function renderAll() {
   renderDayPanel();
   renderTrades();
   renderPositions();
+  renderTradesCheck();
   renderStats();
 }
 
@@ -499,6 +500,7 @@ async function fetchFinnhubQuote(symbol) {
 function activePriceView() {
   if ($('#view-trades').classList.contains('is-active')) return 'trades';
   if ($('#view-positions').classList.contains('is-active')) return 'positions';
+  if ($('#view-tradescheck').classList.contains('is-active')) return 'tradescheck';
   return null;
 }
 
@@ -519,6 +521,7 @@ function ensureCurrentPrice(symbol) {
     const view = activePriceView();
     if (view === 'trades') renderTrades();
     else if (view === 'positions') renderPositions();
+    else if (view === 'tradescheck') renderTradesCheck();
     if (quickGroupDlg.open && quickGroupOpenSymbol === symbol) openQuickGroup(quickGroupOpenSymbol, quickGroupOpenSide);
   });
 }
@@ -549,12 +552,19 @@ function currentPriceCell(t) {
   return `<span class="${toneClass}">${fmtNum(c.price)}</span>`;
 }
 
+/** Live unrealized % move from entry, or null if no usable quote yet. */
+function unrealizedPct(t) {
+  const c = currentPriceCache[t.symbol];
+  if (!c || c.loading || c.error || c.price == null) return null;
+  return (t.side === 'short' ? (t.entry - c.price) : (c.price - t.entry)) / t.entry * 100;
+}
+
 function unrealizedPctCell(t) {
   if (t.pnl != null) return '—';
   const c = currentPriceCache[t.symbol];
   if (!c || c.loading) return '<span class="pill">…</span>';
   if (c.error) return `<span class="pill" title="${esc(c.error)}">—</span>`;
-  const pct = (t.side === 'short' ? (t.entry - c.price) : (c.price - t.entry)) / t.entry * 100;
+  const pct = unrealizedPct(t);
   return `<b class="${cls(pct)}">${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%</b>`;
 }
 
@@ -767,6 +777,123 @@ async function fetchYahooChart(symbol) {
     }
   }
   throw new Error(`Could not fetch price data for ${symbol} (${lastErr ? lastErr.message : 'unknown error'}). Yahoo may be blocking direct/proxied browser requests right now — check the symbol is valid, or try again.`);
+}
+
+/* ---- trades check: flag open trades/positions against a fixed rule set ---- */
+const TC_LOSS_CAP_PCT = -10;               // rule 1: unrealized loss must stay above this
+const TC_EARLY_LOSS_PCT = -2;              // rule 2: loss threshold within the early window
+const TC_EARLY_WINDOW_DAYS = 2;            // rule 2 & 3: "within 2 days of entry" / "immediately"
+const TC_CAPITAL_CAP = 20000;              // rule 4: max capital per symbol+side
+const TC_REGULAR_HOLD_DAYS = 21;           // rule 4: regular hold period, calendar days
+const TC_REGULAR_HOLD_TRADING_DAYS = 15;   // rule 4: regular hold period, trading days
+const TC_CAPITAL_REDUCE_TRADING_DAYS = 3;  // rule 4: grace period to bring capital back under cap
+
+function tradingDaysBetween(a, b) {
+  const d1 = parseYmd(a), d2 = parseYmd(b);
+  if (d2 < d1) return -tradingDaysBetween(b, a);
+  let count = 0;
+  const cur = new Date(d1);
+  while (cur < d2) {
+    cur.setDate(cur.getDate() + 1);
+    const day = cur.getDay();
+    if (day !== 0 && day !== 6) count++;
+  }
+  return count;
+}
+
+/** Evaluates the fixed rule set against current open trades/positions. Nothing here is stored —
+ *  it's recomputed fresh each render from trades/positions plus whatever live quotes are cached. */
+function computeTradesCheck() {
+  const openTrades = trades.map(withDerived).filter(t => t.pnl == null);
+  openTrades.forEach(t => ensureCurrentPrice(t.symbol));
+  const withPct = openTrades.map(t => ({ t, pct: unrealizedPct(t) }));
+
+  const rule1 = withPct.filter(x => x.pct != null && x.pct <= TC_LOSS_CAP_PCT);
+  const rule2 = withPct.filter(x => x.pct != null && x.t.days != null && x.t.days <= TC_EARLY_WINDOW_DAYS && x.pct <= TC_EARLY_LOSS_PCT);
+  const rule3 = withPct.filter(x => x.pct != null && x.t.days != null && x.t.days <= TC_EARLY_WINDOW_DAYS && x.pct > 0);
+
+  // Capital cap (rule 4) looks at total capital per symbol+side across BOTH loose open trades
+  // and open multi-leg Positions, since that's a portfolio-level exposure question, not a
+  // per-trade one — unlike rules 1-3, which are about a single trade's own live % move.
+  const capMap = new Map();
+  function addCapital(symbol, side, capital, entryDate) {
+    const key = `${symbol}|${side}`;
+    let g = capMap.get(key);
+    if (!g) capMap.set(key, g = { symbol, side, capital: 0, entryDate });
+    g.capital += capital;
+    if (entryDate && (!g.entryDate || entryDate < g.entryDate)) g.entryDate = entryDate;
+  }
+  trades.filter(t => !isPositionTrade(t) && isOpenTrade(t)).forEach(t => addCapital(t.symbol, t.side, t.entry * t.qty, t.entryDate || t.date));
+  positions.filter(p => p.status === 'open').map(withPositionDerived).forEach(p => {
+    if (p.remainingQty > 0) addCapital(p.symbol, p.side, p.avgCost * p.remainingQty, p.openDate);
+  });
+
+  const today = ymd(new Date());
+  const rule4 = Array.from(capMap.values())
+    .filter(g => g.capital > TC_CAPITAL_CAP)
+    .map(g => {
+      const calDays = g.entryDate ? daysBetween(g.entryDate, today) : null;
+      const tDays = g.entryDate ? tradingDaysBetween(g.entryDate, today) : null;
+      const beyondRegularHold = (calDays != null && calDays > TC_REGULAR_HOLD_DAYS) || (tDays != null && tDays > TC_REGULAR_HOLD_TRADING_DAYS);
+      return Object.assign(g, { calDays, tDays, beyondRegularHold });
+    })
+    .sort((a, b) => b.capital - a.capital);
+
+  return { openCount: openTrades.length, rule1, rule2, rule3, rule4 };
+}
+
+function renderTradesCheck() {
+  const { openCount, rule1, rule2, rule3, rule4 } = computeTradesCheck();
+  const flagCount = rule1.length + rule2.length + rule3.length + rule4.length;
+
+  $('#tcSummaryGrid').innerHTML = `
+    <div class="stat"><div class="stat-label">Open trades checked</div><div class="stat-value">${openCount}</div></div>
+    <div class="stat"><div class="stat-label">Rules flagged</div>
+      <div class="stat-value ${flagCount ? 'neg' : 'pos'}">${flagCount}</div>
+      <div class="stat-sub">${flagCount ? 'See below' : 'All clear'}</div></div>`;
+
+  const rowOrEmpty = (rows, emptySel, bodySel, html) => {
+    $(emptySel).hidden = rows.length > 0;
+    $(bodySel).innerHTML = rows.map(html).join('');
+  };
+
+  rowOrEmpty(rule1, '#tcRule1Empty', '#tcRule1Body', ({ t, pct }) => `
+    <tr>
+      <td><b>${esc(t.symbol)}</b></td>
+      <td><span class="pill ${t.side}">${t.side}</span></td>
+      <td class="num neg"><b>${pct.toFixed(2)}%</b></td>
+      <td class="mono">${t.entryDate || t.date}</td>
+    </tr>`);
+
+  rowOrEmpty(rule2, '#tcRule2Empty', '#tcRule2Body', ({ t, pct }) => `
+    <tr>
+      <td><b>${esc(t.symbol)}</b></td>
+      <td><span class="pill ${t.side}">${t.side}</span></td>
+      <td class="num neg"><b>${pct.toFixed(2)}%</b></td>
+      <td class="num">${t.days}d</td>
+      <td><span class="pill notworking">Exit now</span></td>
+    </tr>`);
+
+  rowOrEmpty(rule3, '#tcRule3Empty', '#tcRule3Body', ({ t, pct }) => `
+    <tr>
+      <td><b>${esc(t.symbol)}</b></td>
+      <td><span class="pill ${t.side}">${t.side}</span></td>
+      <td class="num pos"><b>+${pct.toFixed(2)}%</b></td>
+      <td class="num">${t.days}d</td>
+      <td><span class="pill working">Add to position</span></td>
+    </tr>`);
+
+  rowOrEmpty(rule4, '#tcRule4Empty', '#tcRule4Body', g => `
+    <tr>
+      <td><b>${esc(g.symbol)}</b></td>
+      <td><span class="pill ${g.side}">${g.side}</span></td>
+      <td class="num neg"><b>${fmtMoney(g.capital)}</b></td>
+      <td class="num">${fmtMoney(g.capital - TC_CAPITAL_CAP)}</td>
+      <td class="num">${g.calDays != null ? `${g.calDays}d / ${g.tDays}td` : '—'}</td>
+      <td>${g.beyondRegularHold
+        ? `<span class="pill notworking">Reduce within ${TC_CAPITAL_REDUCE_TRADING_DAYS} trading days</span>`
+        : `<span class="pill watch">Within regular hold — reduce if it runs past ${TC_REGULAR_HOLD_DAYS}d/${TC_REGULAR_HOLD_TRADING_DAYS}td</span>`}</td>
+    </tr>`);
 }
 
 /* ---- stats ---- */
@@ -1262,6 +1389,7 @@ $('#tabs').addEventListener('click', e => {
   $$('.tab').forEach(t => t.classList.toggle('is-active', t === btn));
   $$('.view').forEach(v => v.classList.toggle('is-active', v.id === `view-${btn.dataset.view}`));
   if (btn.dataset.view === 'trades') renderTrades();
+  if (btn.dataset.view === 'tradescheck') renderTradesCheck();
 });
 
 $('#newTradeBtn').addEventListener('click', () => openDialog(null, selectedDate));
