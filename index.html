@@ -46,13 +46,26 @@
       <span>Trade Management</span>
     </div>
     <p class="muted" style="margin:0 0 14px">Sign in to sync your trades and positions across devices.</p>
-    <label>Email <input type="email" id="authEmail" autocomplete="username" required></label>
-    <label>Password <input type="password" id="authPassword" autocomplete="current-password" required></label>
-    <div class="auth-error" id="authError" hidden></div>
-    <div class="auth-actions">
-      <button class="btn btn-primary" id="authSignInBtn">Sign in</button>
-      <button class="btn btn-ghost" id="authSignUpBtn">Create account</button>
+
+    <div id="authLoginFields">
+      <label>Email <input type="email" id="authEmail" autocomplete="username" required></label>
+      <label>Password <input type="password" id="authPassword" autocomplete="current-password" required></label>
+      <div class="auth-actions">
+        <button class="btn btn-primary" id="authSignInBtn">Sign in</button>
+        <button class="btn btn-ghost" id="authSignUpBtn">Create account</button>
+      </div>
+      <button type="button" class="btn btn-ghost" id="authForgotBtn" style="width:100%; margin-top:6px; font-size:12.5px">Forgot password?</button>
     </div>
+
+    <div id="authResetFields" hidden>
+      <p class="muted" style="margin:0 0 10px">Enter a new password for your account.</p>
+      <label>New password <input type="password" id="authNewPassword" autocomplete="new-password"></label>
+      <div class="auth-actions">
+        <button class="btn btn-primary" id="authSetPasswordBtn">Set new password</button>
+      </div>
+    </div>
+
+    <div class="auth-error" id="authError" hidden></div>
   </div>
 </div>
 

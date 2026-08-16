@@ -1540,12 +1540,44 @@ async function authSignOut() {
   await sb.auth.signOut();
 }
 
+function showResetMode(show) {
+  $('#authLoginFields').hidden = show;
+  $('#authResetFields').hidden = !show;
+}
+
+async function authForgotPassword() {
+  setAuthError('');
+  const email = $('#authEmail').value.trim();
+  if (!email) { setAuthError('Enter your email above first, then click "Forgot password?".'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  if (error) { setAuthError(error.message); return; }
+  toast('Password reset email sent — check your inbox.');
+}
+
+async function authSetNewPassword() {
+  setAuthError('');
+  const password = $('#authNewPassword').value;
+  if (!password || password.length < 6) { setAuthError('Password must be at least 6 characters.'); return; }
+  const { error } = await sb.auth.updateUser({ password });
+  if (error) { setAuthError(error.message); return; }
+  toast('Password updated.');
+  showResetMode(false);
+}
+
 $('#authSignInBtn').addEventListener('click', authSignIn);
 $('#authSignUpBtn').addEventListener('click', authSignUp);
 $('#authPassword').addEventListener('keydown', e => { if (e.key === 'Enter') authSignIn(); });
 $('#signOutBtn').addEventListener('click', authSignOut);
+$('#authForgotBtn').addEventListener('click', authForgotPassword);
+$('#authSetPasswordBtn').addEventListener('click', authSetNewPassword);
+$('#authNewPassword').addEventListener('keydown', e => { if (e.key === 'Enter') authSetNewPassword(); });
 
 sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    showAuthOverlay(true);
+    showResetMode(true);
+    return; // wait for the user to set a new password before touching app state
+  }
   if (session && session.user) {
     currentUser = session.user;
     showAuthOverlay(false);
@@ -1558,6 +1590,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
   } else {
     currentUser = null;
     showAuthOverlay(true);
+    showResetMode(false);
     $('#authUserLabel').hidden = true;
     $('#signOutBtn').hidden = true;
   }
