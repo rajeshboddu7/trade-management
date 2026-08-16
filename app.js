@@ -821,10 +821,15 @@ async function callGeminiApi(prompt, useSearch) {
 async function callGeminiEquityAnalysis(symbol, tech, contextNote) {
   const key = getGeminiApiKey();
   if (!key) throw new Error('No Gemini API key set — paste one into the field and click "Save key" first.');
-  if (!/^AIza[\w-]{20,}$/.test(key) && !/^AQ\.[\w.-]{20,}$/.test(key)) {
+  if (/^AQ\./.test(key)) {
+    throw new Error(
+      'This looks like an "Auth key" (starts with "AQ."), not an API key — Google\'s Generative Language API rejects those for direct requests like this one (confirmed against the live API: it returns "invalid authentication credentials, expected OAuth 2 access token"). ' +
+      'On aistudio.google.com/api-keys, use the key labeled "API key" (starts with "AIza"), not an Auth key.');
+  }
+  if (!/^AIza[\w-]{20,}$/.test(key)) {
     throw new Error(
       `That doesn't look like a Gemini API key (yours: "${key.slice(0, 6)}…${key.slice(-4)}", ${key.length} chars). ` +
-      'A real key from aistudio.google.com/apikey starts with "AIza" (older keys) or "AQ." (newer keys). If yours doesn\'t, you likely copied an OAuth Client ID or something else — go back to aistudio.google.com/apikey and copy the API key value specifically.');
+      'A real API key from aistudio.google.com/api-keys starts with "AIza". If yours doesn\'t, you likely copied an Auth key or OAuth Client ID instead — go back and copy the "API key" value specifically.');
   }
 
   const prompt = `You are giving an unbiased equity analysis for ${symbol}.
