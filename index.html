@@ -135,7 +135,12 @@
       </select>
       <button class="btn btn-ghost" id="clearFilters">Clear</button>
       <span class="spacer" style="flex:1"></span>
+      <input type="password" id="finnhubApiKey" placeholder="Finnhub API key (free, for live prices)" style="max-width:240px" autocomplete="off">
+      <button class="btn btn-ghost" id="finnhubApiKeySave">Save key</button>
       <button class="btn btn-ghost" id="refreshPricesBtn">Refresh prices</button>
+    </div>
+    <div class="inline-hint" id="finnhubKeyHint">
+      Live "Current" price and Positions' Unrealized P/L need a free Finnhub API key (stored only in this browser) — get one instantly at finnhub.io/register, then paste it above.
     </div>
     <div class="table-wrap">
       <table class="tbl" id="tradeTable">

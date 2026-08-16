@@ -471,6 +471,31 @@ function filteredTrades() {
 const currentPriceCache = {};
 const CURRENT_PRICE_TTL_MS = 5 * 60 * 1000;
 
+/** Finnhub's free-tier /quote endpoint sends proper CORS headers (Access-Control-Allow-Origin: *),
+ *  unlike Yahoo's unofficial endpoint and the public CORS proxies fronting it — those are flaky and
+ *  frequently rate-limited/blocked from real browsers. Finnhub is the reliable primary source for a
+ *  live quote when the user has supplied a free key; Yahoo+proxies remain the fallback/history source. */
+const FINNHUB_KEY_STORAGE = 'tm.finnhubApiKey';
+function getFinnhubApiKey() { return localStorage.getItem(FINNHUB_KEY_STORAGE) || ''; }
+function saveFinnhubApiKey() {
+  const key = $('#finnhubApiKey').value.trim();
+  localStorage.setItem(FINNHUB_KEY_STORAGE, key);
+  toast(key ? 'Finnhub API key saved' : 'Finnhub API key cleared');
+  for (const k of Object.keys(currentPriceCache)) delete currentPriceCache[k];
+  renderTrades();
+  renderPositions();
+}
+
+async function fetchFinnhubQuote(symbol) {
+  const key = getFinnhubApiKey();
+  if (!key) return null;
+  const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${encodeURIComponent(key)}`);
+  if (!res.ok) throw new Error(`Finnhub HTTP ${res.status}`);
+  const data = await res.json();
+  if (data == null || data.c == null || data.c === 0) throw new Error('No quote from Finnhub for this symbol');
+  return { price: data.c, prevClose: data.pc ?? null };
+}
+
 function activePriceView() {
   if ($('#view-trades').classList.contains('is-active')) return 'trades';
   if ($('#view-positions').classList.contains('is-active')) return 'positions';
@@ -482,10 +507,12 @@ function ensureCurrentPrice(symbol) {
   const c = currentPriceCache[symbol];
   if (c && (c.loading || (c.fetchedAt && Date.now() - c.fetchedAt < CURRENT_PRICE_TTL_MS))) return;
   currentPriceCache[symbol] = { loading: true };
-  fetchYahooChart(symbol).then(result => {
+  (getFinnhubApiKey() ? fetchFinnhubQuote(symbol) : fetchYahooChart(symbol).then(result => {
     const meta = result && result.meta;
     if (!meta || meta.regularMarketPrice == null) throw new Error('No quote in response');
-    currentPriceCache[symbol] = { price: meta.regularMarketPrice, prevClose: meta.previousClose ?? null, fetchedAt: Date.now() };
+    return { price: meta.regularMarketPrice, prevClose: meta.previousClose ?? null };
+  })).then(quote => {
+    currentPriceCache[symbol] = { price: quote.price, prevClose: quote.prevClose, fetchedAt: Date.now() };
   }).catch(err => {
     currentPriceCache[symbol] = { error: err.message, fetchedAt: Date.now() };
   }).finally(() => {
@@ -1395,6 +1422,9 @@ $('#refreshPricesBtn').addEventListener('click', () => {
   for (const k of Object.keys(currentPriceCache)) delete currentPriceCache[k];
   renderTrades();
 });
+$('#finnhubApiKey').value = getFinnhubApiKey();
+$('#finnhubApiKeySave').addEventListener('click', saveFinnhubApiKey);
+$('#finnhubApiKey').addEventListener('keydown', e => { if (e.key === 'Enter') saveFinnhubApiKey(); });
 
 // theme
 function applyTheme() {
