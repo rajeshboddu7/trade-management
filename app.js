@@ -24,34 +24,42 @@ async function syncToCloud(key, value) {
 
 /** Pull all cloud state for the signed-in user and overwrite the local cache with it —
  *  cloud is the source of truth once signed in, so this is what makes cross-device work. */
+/** Union-merge two arrays of {id,...} records by id — never drops a record either
+ *  side has. This is the whole fix: no sync path should ever be able to silently
+ *  delete data just because one side happened to be empty or stale. */
+function mergeById(local, cloud) {
+  const map = new Map();
+  (local || []).forEach(item => { if (item && item.id != null) map.set(item.id, item); });
+  (cloud || []).forEach(item => { if (item && item.id != null) map.set(item.id, item); }); // cloud wins on id conflicts
+  return Array.from(map.values());
+}
+
 async function pullCloudState() {
   const { data, error } = await sb.from('app_state').select('key,data').eq('user_id', currentUser.id);
   if (error) { toast('Could not load cloud data: ' + error.message); return; }
   const map = {};
   (data || []).forEach(row => { map[row.key] = row.data; });
 
-  const cloudHasData = (Array.isArray(map.trades) && map.trades.length)
-    || (Array.isArray(map.positions) && map.positions.length)
-    || (map.prefs && Object.keys(map.prefs).length);
-  const localHasData = trades.length || positions.length;
+  const cloudTrades = Array.isArray(map.trades) ? map.trades : [];
+  const cloudPositions = Array.isArray(map.positions) ? map.positions : [];
 
-  if (cloudHasData || !localHasData) {
-    // Cloud has real data — or both are empty, in which case this is a no-op either way.
-    // Either way, cloud wins: this is what makes cross-device sync actually work.
-    trades = Array.isArray(map.trades) ? map.trades : [];
-    positions = Array.isArray(map.positions) ? map.positions : [];
-    prefs = Object.assign({ theme: 'dark' }, map.prefs || {});
-    localStorage.setItem(KEY_TRADES, JSON.stringify(trades));
-    localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
-    localStorage.setItem(KEY_PREFS, JSON.stringify(prefs));
-  } else {
-    // Cloud account is empty but this browser already has local data (first-ever login
-    // on this device) — upload local to the cloud instead of wiping it with nothing.
-    await syncToCloud('trades', trades);
-    await syncToCloud('positions', positions);
-    await syncToCloud('prefs', prefs);
-    toast('Uploaded your existing local data to your account');
-  }
+  const mergedTrades = mergeById(trades, cloudTrades);
+  const mergedPositions = mergeById(positions, cloudPositions);
+  const tradesGrew = mergedTrades.length > cloudTrades.length;
+  const positionsGrew = mergedPositions.length > cloudPositions.length;
+
+  trades = mergedTrades;
+  positions = mergedPositions;
+  prefs = Object.assign({ theme: 'dark' }, prefs, map.prefs || {});
+
+  localStorage.setItem(KEY_TRADES, JSON.stringify(trades));
+  localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
+  localStorage.setItem(KEY_PREFS, JSON.stringify(prefs));
+
+  // Push anything this browser had that the cloud didn't, so the cloud catches up too.
+  if (tradesGrew) await syncToCloud('trades', trades);
+  if (positionsGrew) await syncToCloud('positions', positions);
+  if (tradesGrew || positionsGrew) toast('Synced — merged local and cloud data, nothing dropped.');
 }
 
 /* ============================ state ============================ */
