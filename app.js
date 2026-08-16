@@ -471,8 +471,14 @@ function filteredTrades() {
 const currentPriceCache = {};
 const CURRENT_PRICE_TTL_MS = 5 * 60 * 1000;
 
+function activePriceView() {
+  if ($('#view-trades').classList.contains('is-active')) return 'trades';
+  if ($('#view-positions').classList.contains('is-active')) return 'positions';
+  return null;
+}
+
 function ensureCurrentPrice(symbol) {
-  if (!$('#view-trades').classList.contains('is-active')) return;
+  if (!activePriceView()) return;
   const c = currentPriceCache[symbol];
   if (c && (c.loading || (c.fetchedAt && Date.now() - c.fetchedAt < CURRENT_PRICE_TTL_MS))) return;
   currentPriceCache[symbol] = { loading: true };
@@ -483,8 +489,25 @@ function ensureCurrentPrice(symbol) {
   }).catch(err => {
     currentPriceCache[symbol] = { error: err.message, fetchedAt: Date.now() };
   }).finally(() => {
-    if ($('#view-trades').classList.contains('is-active')) renderTrades();
+    const view = activePriceView();
+    if (view === 'trades') renderTrades();
+    else if (view === 'positions') renderPositions();
   });
+}
+
+function calcUnrealized(side, avgCost, qty, price) {
+  if (price == null || !qty) return null;
+  return (side === 'short' ? (avgCost - price) : (price - avgCost)) * qty;
+}
+
+function quickGroupUnrealizedRow(g) {
+  if (!(g.openQty > 0)) return '';
+  const c = currentPriceCache[g.symbol];
+  if (!c) { ensureCurrentPrice(g.symbol); return `<div class="pos-card-row"><span>Unrealized P/L</span><b>…</b></div>`; }
+  if (c.loading) return `<div class="pos-card-row"><span>Unrealized P/L</span><b>…</b></div>`;
+  if (c.error) return '';
+  const upl = calcUnrealized(g.side, g.avgCost, g.openQty, c.price);
+  return `<div class="pos-card-row"><span>Unrealized P/L</span><b class="${cls(upl)}">${fmtMoney(upl, { sign: true })}</b></div>`;
 }
 
 function currentPriceCell(t) {
@@ -642,6 +665,7 @@ function renderPositions() {
       </div>
       <div class="pos-card-row"><span>Avg cost</span><b>${fmtNum(g.avgCost)}</b></div>
       <div class="pos-card-row"><span>Qty open</span><b>${fmtNum(g.openQty)}</b></div>
+      ${quickGroupUnrealizedRow(g)}
       ${g.realizedPnl ? `<div class="pos-card-row"><span>Realized P/L</span><b class="${cls(g.realizedPnl)}">${fmtMoney(g.realizedPnl, { sign: true })}</b></div>` : ''}
       <div class="pos-card-note">${g.openCount} open lot${g.openCount === 1 ? '' : 's'}${g.closedCount ? `, ${g.closedCount} closed` : ''} — click to view.</div>
     </button>`).join('');
@@ -1233,11 +1257,16 @@ function openQuickGroup(symbol, side) {
     openQty += t.qty;
   }
   const realizedPnl = closedList.reduce((s, t) => s + (t.pnl || 0), 0);
+  const priceInfo = currentPriceCache[symbol];
+  const unrealizedPnl = openQty > 0 && priceInfo && !priceInfo.loading && !priceInfo.error
+    ? calcUnrealized(side, avgCost, openQty, priceInfo.price) : null;
+  if (openQty > 0) ensureCurrentPrice(symbol);
 
   $('#qgTitle').innerHTML = `${esc(symbol)} <span class="pill ${side}">${side}</span> <span class="pill">Quick trades</span>`;
   $('#qgStats').innerHTML = `
     <span><i>Avg cost (open)</i><b>${fmtNum(avgCost)}</b></span>
     <span><i>Qty open</i><b>${fmtNum(openQty)}</b></span>
+    ${openQty > 0 ? `<span><i>Unrealized P/L</i><b class="${cls(unrealizedPnl)}">${unrealizedPnl == null ? '…' : fmtMoney(unrealizedPnl, { sign: true })}</b></span>` : ''}
     <span><i>Realized P/L</i><b class="${cls(realizedPnl)}">${fmtMoney(realizedPnl, { sign: true })}</b></span>`;
   $('#qgTimeline').innerHTML = list.map(t => `
     <div class="pos-event" data-id="${t.id}">
