@@ -29,12 +29,29 @@ async function pullCloudState() {
   if (error) { toast('Could not load cloud data: ' + error.message); return; }
   const map = {};
   (data || []).forEach(row => { map[row.key] = row.data; });
-  trades = Array.isArray(map.trades) ? map.trades : [];
-  positions = Array.isArray(map.positions) ? map.positions : [];
-  prefs = Object.assign({ theme: 'dark' }, map.prefs || {});
-  localStorage.setItem(KEY_TRADES, JSON.stringify(trades));
-  localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
-  localStorage.setItem(KEY_PREFS, JSON.stringify(prefs));
+
+  const cloudHasData = (Array.isArray(map.trades) && map.trades.length)
+    || (Array.isArray(map.positions) && map.positions.length)
+    || (map.prefs && Object.keys(map.prefs).length);
+  const localHasData = trades.length || positions.length;
+
+  if (cloudHasData || !localHasData) {
+    // Cloud has real data — or both are empty, in which case this is a no-op either way.
+    // Either way, cloud wins: this is what makes cross-device sync actually work.
+    trades = Array.isArray(map.trades) ? map.trades : [];
+    positions = Array.isArray(map.positions) ? map.positions : [];
+    prefs = Object.assign({ theme: 'dark' }, map.prefs || {});
+    localStorage.setItem(KEY_TRADES, JSON.stringify(trades));
+    localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
+    localStorage.setItem(KEY_PREFS, JSON.stringify(prefs));
+  } else {
+    // Cloud account is empty but this browser already has local data (first-ever login
+    // on this device) — upload local to the cloud instead of wiping it with nothing.
+    await syncToCloud('trades', trades);
+    await syncToCloud('positions', positions);
+    await syncToCloud('prefs', prefs);
+    toast('Uploaded your existing local data to your account');
+  }
 }
 
 /* ============================ state ============================ */
