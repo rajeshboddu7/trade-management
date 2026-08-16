@@ -17,7 +17,6 @@
     <button class="tab is-active" data-view="calendar">Calendar</button>
     <button class="tab" data-view="trades">Trades</button>
     <button class="tab" data-view="positions">Positions</button>
-    <button class="tab" data-view="critique">Critique</button>
     <button class="tab" data-view="stats">Stats</button>
   </nav>
   <div class="topbar-actions">
@@ -215,26 +214,6 @@
         </table>
         <div class="empty" id="posClosedEmpty" hidden>No closed positions yet.</div>
       </div>
-    </div>
-  </section>
-
-  <!-- ===================== CRITIQUE ===================== -->
-  <section class="view" id="view-critique">
-    <div class="filters">
-      <input type="text" id="critiqueSymbol" name="symbol" placeholder="Symbol (e.g. AAPL)" style="max-width:160px" autocomplete="off">
-      <button class="btn btn-primary" id="critiqueRunBtn">Analyze</button>
-      <span class="spacer" style="flex:1"></span>
-      <input type="password" id="critiqueApiKey" placeholder="Google Gemini API key" style="max-width:220px" autocomplete="off">
-      <button class="btn btn-ghost" id="critiqueApiKeySave">Save key</button>
-    </div>
-    <div class="pos-empty" id="critiqueIntro">
-      Enter a symbol and click Analyze for an unbiased AI equity analysis — real price/technicals pulled from Yahoo Finance, run fresh each time. Requires a free Google Gemini API key (stored only in this browser) — get one at aistudio.google.com/apikey.
-    </div>
-    <div class="pos-empty" id="critiqueStatus" hidden></div>
-    <div class="panel" id="critiqueResultPanel" hidden>
-      <h3 id="critiqueResultTitle"></h3>
-      <div class="pos-card-note" id="critiqueMeta" style="margin-bottom:12px; white-space:normal"></div>
-      <div id="critiqueAnalysis" style="white-space:pre-wrap; line-height:1.6;"></div>
     </div>
   </section>
 

@@ -731,18 +731,8 @@ function renderPositions() {
     </tr>`).join('');
 }
 
-/* ---- critique: on-demand Gemini equity analysis ---- */
 function daysBetween(a, b) {
   return Math.round((parseYmd(b) - parseYmd(a)) / 86400000);
-}
-
-const GEMINI_KEY_STORAGE = 'tm.geminiApiKey';
-const GEMINI_MODEL = 'gemini-flash-latest'; // alias that always points to the current stable Flash model, so it doesn't need bumping when Google retires a dated version
-function getGeminiApiKey() { return localStorage.getItem(GEMINI_KEY_STORAGE) || ''; }
-function saveGeminiApiKey() {
-  const key = $('#critiqueApiKey').value.trim();
-  localStorage.setItem(GEMINI_KEY_STORAGE, key);
-  toast(key ? 'API key saved' : 'API key cleared');
 }
 
 /** Fetch daily OHLC history for a symbol from Yahoo Finance's chart endpoint (no key needed).
@@ -770,127 +760,6 @@ async function fetchYahooChart(symbol) {
     }
   }
   throw new Error(`Could not fetch price data for ${symbol} (${lastErr ? lastErr.message : 'unknown error'}). Yahoo may be blocking direct/proxied browser requests right now — check the symbol is valid, or try again.`);
-}
-
-/** Simple technicals computed client-side from real daily closes — no invented numbers. */
-function computeTechnicals(chartResult) {
-  const ts = chartResult.timestamp || [];
-  const quote = (chartResult.indicators && chartResult.indicators.quote && chartResult.indicators.quote[0]) || {};
-  const closes = (quote.close || []).map((c, i) => ({ t: ts[i], c })).filter(x => x.c != null);
-  if (!closes.length) throw new Error('No price history returned for this symbol.');
-
-  const last = closes[closes.length - 1];
-  const prev = closes.length > 1 ? closes[closes.length - 2] : last;
-  const changePct = prev.c ? ((last.c - prev.c) / prev.c) * 100 : 0;
-
-  const sma = n => {
-    const slice = closes.slice(-n);
-    if (slice.length < Math.min(n, 10)) return null;
-    return slice.reduce((s, x) => s + x.c, 0) / slice.length;
-  };
-  const sma20 = sma(20), sma50 = sma(50);
-  const vals = closes.map(x => x.c);
-  const rangeHigh = Math.max(...vals), rangeLow = Math.min(...vals);
-  const rangePct = rangeHigh !== rangeLow ? ((last.c - rangeLow) / (rangeHigh - rangeLow)) * 100 : 50;
-
-  const rets = [];
-  for (let i = 1; i < closes.length; i++) {
-    if (closes[i - 1].c) rets.push((closes[i].c - closes[i - 1].c) / closes[i - 1].c);
-  }
-  const mean = rets.length ? rets.reduce((s, r) => s + r, 0) / rets.length : 0;
-  const variance = rets.length ? rets.reduce((s, r) => s + (r - mean) * (r - mean), 0) / rets.length : 0;
-  const volatilityPct = Math.sqrt(variance) * 100;
-
-  return {
-    price: last.c, changePct, sma20, sma50, rangeHigh, rangeLow, rangePct, volatilityPct,
-    asOf: last.t ? new Date(last.t * 1000).toISOString().slice(0, 10) : '',
-  };
-}
-
-async function callGeminiApi(prompt, useSearch) {
-  const key = getGeminiApiKey();
-  const body = { contents: [{ parts: [{ text: prompt }] }] };
-  if (useSearch) body.tools = [{ google_search: {} }];
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-    { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body) });
-  const data = await res.json();
-  return { ok: res.ok, status: res.status, data };
-}
-
-async function callGeminiEquityAnalysis(symbol, tech, contextNote) {
-  const key = getGeminiApiKey();
-  if (!key) throw new Error('No Gemini API key set — paste one into the field and click "Save key" first.');
-  if (/^AQ\./.test(key)) {
-    throw new Error(
-      'This looks like an "Auth key" (starts with "AQ."), not an API key — Google\'s Generative Language API rejects those for direct requests like this one (confirmed against the live API: it returns "invalid authentication credentials, expected OAuth 2 access token"). ' +
-      'On aistudio.google.com/api-keys, use the key labeled "API key" (starts with "AIza"), not an Auth key.');
-  }
-  if (!/^AIza[\w-]{20,}$/.test(key)) {
-    throw new Error(
-      `That doesn't look like a Gemini API key (yours: "${key.slice(0, 6)}…${key.slice(-4)}", ${key.length} chars). ` +
-      'A real API key from aistudio.google.com/api-keys starts with "AIza". If yours doesn\'t, you likely copied an Auth key or OAuth Client ID instead — go back and copy the "API key" value specifically.');
-  }
-
-  const prompt = `You are giving an unbiased equity analysis for ${symbol}.
-
-Computed technicals (from real daily closing prices, not a live tick — may lag the current quote by minutes to a day):
-- Last close: ${fmtNum(tech.price)} (as of ${tech.asOf})
-- Change vs prior close: ${tech.changePct >= 0 ? '+' : ''}${tech.changePct.toFixed(2)}%
-- 20-day SMA: ${tech.sma20 != null ? fmtNum(tech.sma20) : 'not enough history'}
-- 50-day SMA: ${tech.sma50 != null ? fmtNum(tech.sma50) : 'not enough history'}
-- 6-month range: ${fmtNum(tech.rangeLow)} to ${fmtNum(tech.rangeHigh)} (currently at ${tech.rangePct.toFixed(0)}% of that range)
-- Daily volatility (stdev of daily returns): ${tech.volatilityPct.toFixed(2)}%
-${contextNote ? `\nThe trader's own notes on this symbol from their journal (for context only — do not just validate this):\n${contextNote}\n` : ''}
-If you have live search available, check for recent news, earnings, or catalysts on ${symbol} from the last few weeks; otherwise rely on what you already know and say plainly that catalyst info may not be current. Then give a candid, unbiased analysis covering: what the technicals suggest, what the real catalysts/risks are, and specifically what could go wrong with both a bullish and a bearish read. Do not simply agree with the trader's existing thesis — actively look for what it's missing. Keep it to a few tight paragraphs, no filler.`;
-
-  let { ok, status, data } = await callGeminiApi(prompt, true);
-  if (!ok) ({ ok, status, data } = await callGeminiApi(prompt, false)); // retry without search grounding
-
-  if (!ok) throw new Error((data && data.error && data.error.message) || `Gemini API error (HTTP ${status})`);
-
-  const candidate = data.candidates && data.candidates[0];
-  if (!candidate) throw new Error('Gemini returned no result — it may have blocked the request.');
-  if (candidate.finishReason === 'SAFETY') throw new Error('Gemini declined to analyze this request (safety filter).');
-
-  const text = ((candidate.content && candidate.content.parts) || []).map(p => p.text || '').join('\n');
-  return text || '(Gemini returned no text.)';
-}
-
-async function runCritiqueAnalysis() {
-  const symbol = $('#critiqueSymbol').value.trim().toUpperCase();
-  if (!symbol) { toast('Enter a symbol first'); return; }
-
-  const statusEl = $('#critiqueStatus');
-  $('#critiqueIntro').hidden = true;
-  $('#critiqueResultPanel').hidden = true;
-  statusEl.hidden = false;
-  statusEl.textContent = `Fetching price data for ${symbol}…`;
-  $('#critiqueRunBtn').disabled = true;
-
-  try {
-    const chart = await fetchYahooChart(symbol);
-    const tech = computeTechnicals(chart);
-
-    statusEl.textContent = `Asking Gemini for analysis on ${symbol}…`;
-
-    const notesParts = [];
-    positions.filter(p => p.symbol === symbol).forEach(p => { if (p.thesis) notesParts.push(`Position thesis: ${p.thesis}`); });
-    trades.filter(t => t.symbol === symbol).slice(-5).forEach(t => { if (t.notes) notesParts.push(`Trade entry note (${t.date}): ${t.notes}`); });
-
-    const analysis = await callGeminiEquityAnalysis(symbol, tech, notesParts.join('\n'));
-
-    statusEl.hidden = true;
-    $('#critiqueResultPanel').hidden = false;
-    $('#critiqueResultTitle').textContent = `${symbol} — Gemini equity analysis`;
-    $('#critiqueMeta').textContent = `Price ${fmtNum(tech.price)} (${tech.changePct >= 0 ? '+' : ''}${tech.changePct.toFixed(2)}%) as of ${tech.asOf} · SMA20 ${tech.sma20 != null ? fmtNum(tech.sma20) : 'n/a'} · SMA50 ${tech.sma50 != null ? fmtNum(tech.sma50) : 'n/a'} · 6mo range ${fmtNum(tech.rangeLow)}–${fmtNum(tech.rangeHigh)}`;
-    $('#critiqueAnalysis').textContent = analysis;
-  } catch (err) {
-    statusEl.hidden = false;
-    statusEl.textContent = `Error: ${err.message}`;
-  } finally {
-    $('#critiqueRunBtn').disabled = false;
-  }
 }
 
 /* ---- stats ---- */
@@ -1450,13 +1319,6 @@ $('#themeBtn').addEventListener('click', () => {
   prefs.theme = prefs.theme === 'dark' ? 'light' : 'dark';
   savePrefs(); applyTheme();
 });
-
-// critique
-$('#critiqueApiKey').value = getGeminiApiKey();
-$('#critiqueApiKeySave').addEventListener('click', saveGeminiApiKey);
-$('#critiqueApiKey').addEventListener('keydown', e => { if (e.key === 'Enter') saveGeminiApiKey(); });
-$('#critiqueRunBtn').addEventListener('click', runCritiqueAnalysis);
-$('#critiqueSymbol').addEventListener('keydown', e => { if (e.key === 'Enter') runCritiqueAnalysis(); });
 
 // overflow menu
 $('#moreBtn').addEventListener('click', e => {

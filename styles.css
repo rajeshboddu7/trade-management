@@ -264,21 +264,6 @@ main { padding: 20px; max-width: 1500px; margin: 0 auto; }
 
 dialog.dlg-wide { width: min(760px, calc(100vw - 32px)); }
 
-/* ---------- critique ---------- */
-.flag-list { display: flex; flex-direction: column; gap: 8px; }
-.flag {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 10px 13px; border-radius: 9px; background: var(--surface-2);
-  font-size: 13px; line-height: 1.55;
-}
-.flag-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; }
-.flag.good { background: var(--win-bg); }
-.flag.good .flag-dot { background: var(--win); }
-.flag.warn { background: var(--warn-bg); }
-.flag.warn .flag-dot { background: var(--warn); }
-.flag.bad { background: var(--loss-bg); }
-.flag.bad .flag-dot { background: var(--loss); }
-
 /* ---------- filters + table ---------- */
 .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .filters input, .filters select {
