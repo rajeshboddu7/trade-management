@@ -492,6 +492,7 @@ function ensureCurrentPrice(symbol) {
     const view = activePriceView();
     if (view === 'trades') renderTrades();
     else if (view === 'positions') renderPositions();
+    if (quickGroupDlg.open && quickGroupOpenSymbol === symbol) openQuickGroup(quickGroupOpenSymbol, quickGroupOpenSide);
   });
 }
 
@@ -505,7 +506,7 @@ function quickGroupUnrealizedRow(g) {
   const c = currentPriceCache[g.symbol];
   if (!c) { ensureCurrentPrice(g.symbol); return `<div class="pos-card-row"><span>Unrealized P/L</span><b>…</b></div>`; }
   if (c.loading) return `<div class="pos-card-row"><span>Unrealized P/L</span><b>…</b></div>`;
-  if (c.error) return '';
+  if (c.error) return `<div class="pos-card-row"><span>Unrealized P/L</span><b title="${esc(c.error)}">—</b></div>`;
   const upl = calcUnrealized(g.side, g.avgCost, g.openQty, c.price);
   return `<div class="pos-card-row"><span>Unrealized P/L</span><b class="${cls(upl)}">${fmtMoney(upl, { sign: true })}</b></div>`;
 }
@@ -708,20 +709,28 @@ function saveGeminiApiKey() {
 }
 
 /** Fetch daily OHLC history for a symbol from Yahoo Finance's chart endpoint (no key needed).
- *  Yahoo doesn't reliably send CORS headers, so fall back to a public CORS proxy on failure. */
+ *  Yahoo doesn't reliably send CORS headers, so fall back to public CORS proxies on failure.
+ *  corsproxy.io now rejects most free/anonymous traffic ("Server-side requests are not allowed
+ *  on your plan"), so allorigins is tried first with corsproxy kept as a last-resort fallback. */
 async function fetchYahooChart(symbol) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=6mo`;
-  const attempts = [url, `https://corsproxy.io/?url=${encodeURIComponent(url)}`];
+  const attempts = [
+    url,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  ];
   let lastErr;
   for (const target of attempts) {
-    try {
-      const res = await fetch(target);
-      if (!res.ok) { lastErr = new Error(`HTTP ${res.status}`); continue; }
-      const data = await res.json();
-      const result = data && data.chart && data.chart.result && data.chart.result[0];
-      if (!result) { lastErr = new Error(data?.chart?.error?.description || 'No data returned'); continue; }
-      return result;
-    } catch (e) { lastErr = e; }
+    for (let retry = 0; retry < 2; retry++) {
+      try {
+        const res = await fetch(target);
+        if (!res.ok) { lastErr = new Error(`HTTP ${res.status}`); continue; }
+        const data = await res.json();
+        const result = data && data.chart && data.chart.result && data.chart.result[0];
+        if (!result) { lastErr = new Error(data?.chart?.error?.description || 'No data returned'); continue; }
+        return result;
+      } catch (e) { lastErr = e; }
+    }
   }
   throw new Error(`Could not fetch price data for ${symbol} (${lastErr ? lastErr.message : 'unknown error'}). Yahoo may be blocking direct/proxied browser requests right now — check the symbol is valid, or try again.`);
 }
@@ -1246,8 +1255,11 @@ $('#pdDlgClose').addEventListener('click', () => posDetailDlg.close());
 
 /* ---- quick group detail (loose trades rolled into one card per symbol) ---- */
 const quickGroupDlg = $('#quickGroupDialog');
+let quickGroupOpenSymbol = null, quickGroupOpenSide = null;
 
 function openQuickGroup(symbol, side) {
+  quickGroupOpenSymbol = symbol;
+  quickGroupOpenSide = side;
   const list = quickGroupTrades(symbol, side);
   const openList = list.filter(t => t.pnl == null);
   const closedList = list.filter(t => t.pnl != null);
@@ -1260,13 +1272,16 @@ function openQuickGroup(symbol, side) {
   const priceInfo = currentPriceCache[symbol];
   const unrealizedPnl = openQty > 0 && priceInfo && !priceInfo.loading && !priceInfo.error
     ? calcUnrealized(side, avgCost, openQty, priceInfo.price) : null;
+  const unrealizedCell = openQty === 0 ? ''
+    : priceInfo && priceInfo.error ? `<b title="${esc(priceInfo.error)}">—</b>`
+    : `<b class="${cls(unrealizedPnl)}">${unrealizedPnl == null ? '…' : fmtMoney(unrealizedPnl, { sign: true })}</b>`;
   if (openQty > 0) ensureCurrentPrice(symbol);
 
   $('#qgTitle').innerHTML = `${esc(symbol)} <span class="pill ${side}">${side}</span> <span class="pill">Quick trades</span>`;
   $('#qgStats').innerHTML = `
     <span><i>Avg cost (open)</i><b>${fmtNum(avgCost)}</b></span>
     <span><i>Qty open</i><b>${fmtNum(openQty)}</b></span>
-    ${openQty > 0 ? `<span><i>Unrealized P/L</i><b class="${cls(unrealizedPnl)}">${unrealizedPnl == null ? '…' : fmtMoney(unrealizedPnl, { sign: true })}</b></span>` : ''}
+    ${openQty > 0 ? `<span><i>Unrealized P/L</i>${unrealizedCell}</span>` : ''}
     <span><i>Realized P/L</i><b class="${cls(realizedPnl)}">${fmtMoney(realizedPnl, { sign: true })}</b></span>`;
   $('#qgTimeline').innerHTML = list.map(t => `
     <div class="pos-event" data-id="${t.id}">
@@ -1290,6 +1305,7 @@ $('#qgTimeline').addEventListener('click', e => {
 });
 $('#qgCloseBtn').addEventListener('click', () => quickGroupDlg.close());
 $('#qgDlgClose').addEventListener('click', () => quickGroupDlg.close());
+quickGroupDlg.addEventListener('close', () => { quickGroupOpenSymbol = null; quickGroupOpenSide = null; });
 
 $('#posGrid').addEventListener('click', e => {
   const card = e.target.closest('.pos-card');
