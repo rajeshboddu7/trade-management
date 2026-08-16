@@ -558,6 +558,12 @@ function unrealizedPctCell(t) {
   return `<b class="${cls(pct)}">${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%</b>`;
 }
 
+function realizedPctCell(t) {
+  if (t.pnl == null || t.exit == null) return '—';
+  const pct = (t.side === 'short' ? (t.entry - t.exit) : (t.exit - t.entry)) / t.entry * 100;
+  return `<b class="${cls(pct)}">${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%</b>`;
+}
+
 function renderTrades() {
   const list = filteredTrades();
   $('#tradesEmpty').hidden = list.length > 0;
@@ -575,6 +581,7 @@ function renderTrades() {
       <td class="num">${t.days == null ? '—' : `${t.days}d${t.pnl == null ? ' (open)' : ''}`}</td>
       <td class="num ${t.pnl == null ? '' : cls(t.pnl)}">${
         t.pnl == null ? '<span class="pill">Open</span>' : `<b>${fmtMoney(t.pnl, { sign: true })}</b>`}</td>
+      <td class="num">${realizedPctCell(t)}</td>
       <td class="num ${t.rmultiple == null ? '' : cls(t.rmultiple)}">${
         t.rmultiple == null ? '—' : (t.rmultiple >= 0 ? '+' : '') + t.rmultiple.toFixed(2)}</td>
       <td><button class="row-del" data-del="${t.id}" title="Delete">✕</button></td>
