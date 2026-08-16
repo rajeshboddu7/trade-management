@@ -737,7 +737,7 @@ function daysBetween(a, b) {
 }
 
 const GEMINI_KEY_STORAGE = 'tm.geminiApiKey';
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-flash-latest'; // alias that always points to the current stable Flash model, so it doesn't need bumping when Google retires a dated version
 function getGeminiApiKey() { return localStorage.getItem(GEMINI_KEY_STORAGE) || ''; }
 function saveGeminiApiKey() {
   const key = $('#critiqueApiKey').value.trim();
