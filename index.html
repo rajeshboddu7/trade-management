@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trade Management</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◧</span>
+    <span>Trade Management</span>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab is-active" data-view="calendar">Calendar</button>
+    <button class="tab" data-view="trades">Trades</button>
+    <button class="tab" data-view="positions">Positions</button>
+    <button class="tab" data-view="critique">Critique</button>
+    <button class="tab" data-view="stats">Stats</button>
+  </nav>
+  <div class="topbar-actions">
+    <button class="btn btn-primary" id="newTradeBtn">+ New Trade</button>
+    <button class="btn btn-ghost" id="themeBtn" title="Toggle theme">☾</button>
+    <div class="menu-wrap">
+      <button class="btn btn-ghost" id="moreBtn" title="More">⋯</button>
+      <div class="menu" id="moreMenu" hidden>
+        <button data-act="export-json">Export JSON (backup)</button>
+        <button data-act="export-csv">Export CSV</button>
+        <button data-act="import-json">Import JSON…</button>
+        <button data-act="sample">Load sample data</button>
+        <button data-act="wipe" class="danger">Erase all data</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Summary strip -->
+<section class="summary" id="summary"></section>
+
+<main>
+  <!-- ===================== CALENDAR ===================== -->
+  <section class="view is-active" id="view-calendar">
+    <div class="cal-head">
+      <div class="cal-nav">
+        <button class="btn btn-ghost" id="prevMonth">‹</button>
+        <h2 id="monthLabel">—</h2>
+        <button class="btn btn-ghost" id="nextMonth">›</button>
+        <button class="btn btn-ghost" id="todayBtn">Today</button>
+      </div>
+      <div class="cal-month-stats" id="monthStats"></div>
+    </div>
+
+    <div class="cal-layout">
+      <div class="cal-wrap">
+        <div class="cal-dow">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          <div class="dow-week">Week</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+          <span class="lg lg-win"></span> Profit
+          <span class="lg lg-loss"></span> Loss
+          <span class="lg lg-flat"></span> Breakeven
+          <span class="hint">· click a day to view or add trades</span>
+        </div>
+      </div>
+
+      <aside class="daypanel" id="dayPanel">
+        <div class="daypanel-empty">Select a day to see its trades.</div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===================== TRADES ===================== -->
+  <section class="view" id="view-trades">
+    <div class="filters">
+      <input type="search" id="fSearch" placeholder="Search symbol, thesis…">
+      <input type="date" id="fFrom" title="From date">
+      <input type="date" id="fTo" title="To date">
+      <select id="fSide">
+        <option value="">All sides</option>
+        <option value="long">Long</option>
+        <option value="short">Short</option>
+      </select>
+      <select id="fResult">
+        <option value="">All results</option>
+        <option value="open">Open</option>
+        <option value="win">Wins</option>
+        <option value="loss">Losses</option>
+        <option value="flat">Breakeven</option>
+      </select>
+      <select id="fPlatform">
+        <option value="">All platforms</option>
+        <option value="etrade">E*TRADE</option>
+        <option value="schwab">Schwab / thinkorswim</option>
+        <option value="fidelity">Fidelity</option>
+        <option value="fidelity-ira">Fidelity IRA</option>
+        <option value="fidelity-roth">Fidelity ROTH</option>
+        <option value="other">Other</option>
+      </select>
+      <button class="btn btn-ghost" id="clearFilters">Clear</button>
+      <span class="spacer" style="flex:1"></span>
+      <button class="btn btn-ghost" id="refreshPricesBtn">Refresh prices</button>
+    </div>
+    <div class="table-wrap">
+      <table class="tbl" id="tradeTable">
+        <thead>
+          <tr>
+            <th data-sort="date">Date</th>
+            <th data-sort="symbol">Symbol</th>
+            <th data-sort="side">Side</th>
+            <th data-sort="platform">Platform</th>
+            <th class="num" data-sort="qty">Qty</th>
+            <th class="num" data-sort="entry">Entry</th>
+            <th class="num">Current</th>
+            <th class="num" data-sort="exit">Exit</th>
+            <th class="num" data-sort="days">Days</th>
+            <th class="num" data-sort="pnl">P/L</th>
+            <th class="num" data-sort="rmultiple">R</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tradeBody"></tbody>
+      </table>
+      <div class="empty" id="tradesEmpty" hidden>No trades match these filters.</div>
+    </div>
+  </section>
+
+  <!-- ===================== POSITIONS ===================== -->
+  <section class="view" id="view-positions">
+    <div class="filters">
+      <input type="search" id="posSearch" placeholder="Search symbol, thesis…">
+      <select id="posSide">
+        <option value="">All sides</option>
+        <option value="long">Long</option>
+        <option value="short">Short</option>
+      </select>
+      <select id="posStatusFilter">
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+        <option value="">All</option>
+      </select>
+      <select id="posPlatform">
+        <option value="">All platforms</option>
+        <option value="etrade">E*TRADE</option>
+        <option value="schwab">Schwab / thinkorswim</option>
+        <option value="fidelity">Fidelity</option>
+        <option value="fidelity-ira">Fidelity IRA</option>
+        <option value="fidelity-roth">Fidelity ROTH</option>
+        <option value="other">Other</option>
+      </select>
+      <button class="btn btn-ghost" id="posClearFilters">Clear</button>
+      <span class="spacer" style="flex:1"></span>
+      <button class="btn btn-primary" id="newPositionBtn">+ New Position</button>
+    </div>
+
+    <div id="posOpenWrap">
+      <div class="pos-section-label">Open positions</div>
+      <div class="pos-grid" id="posGrid"></div>
+      <div class="pos-empty" id="posEmpty" hidden>No open positions. Open one to start tracking a swing trade.</div>
+    </div>
+
+    <div id="posClosedWrap">
+      <div class="pos-section-label">Closed positions</div>
+      <div class="table-wrap compact">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Symbol</th><th>Side</th><th>Platform</th><th>Opened</th><th>Closed</th>
+              <th class="num">Trims</th><th class="num">Realized P/L</th>
+            </tr>
+          </thead>
+          <tbody id="posClosedBody"></tbody>
+        </table>
+        <div class="empty" id="posClosedEmpty" hidden>No closed positions yet.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CRITIQUE ===================== -->
+  <section class="view" id="view-critique">
+    <div class="filters">
+      <input type="text" id="critiqueSymbol" name="symbol" placeholder="Symbol (e.g. AAPL)" style="max-width:160px" autocomplete="off">
+      <button class="btn btn-primary" id="critiqueRunBtn">Analyze</button>
+      <span class="spacer" style="flex:1"></span>
+      <input type="password" id="critiqueApiKey" placeholder="Google Gemini API key" style="max-width:220px" autocomplete="off">
+      <button class="btn btn-ghost" id="critiqueApiKeySave">Save key</button>
+    </div>
+    <div class="pos-empty" id="critiqueIntro">
+      Enter a symbol and click Analyze for an unbiased AI equity analysis — real price/technicals pulled from Yahoo Finance, run fresh each time. Requires a free Google Gemini API key (stored only in this browser) — get one at aistudio.google.com/apikey.
+    </div>
+    <div class="pos-empty" id="critiqueStatus" hidden></div>
+    <div class="panel" id="critiqueResultPanel" hidden>
+      <h3 id="critiqueResultTitle"></h3>
+      <div class="pos-card-note" id="critiqueMeta" style="margin-bottom:12px; white-space:normal"></div>
+      <div id="critiqueAnalysis" style="white-space:pre-wrap; line-height:1.6;"></div>
+    </div>
+  </section>
+
+  <!-- ===================== STATS ===================== -->
+  <section class="view" id="view-stats">
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="panel">
+      <h3>Cumulative P/L</h3>
+      <div class="chart-wrap"><svg id="equityChart" preserveAspectRatio="none"></svg></div>
+    </div>
+
+    <div class="panel-row">
+      <div class="panel">
+        <h3>P/L by month</h3>
+        <div class="chart-wrap"><svg id="monthChart" preserveAspectRatio="none"></svg></div>
+      </div>
+      <div class="panel">
+        <h3>By symbol</h3>
+        <div class="table-wrap compact"><table class="tbl"><tbody id="bySymbol"></tbody></table></div>
+      </div>
+      <div class="panel">
+        <h3>By platform</h3>
+        <div class="table-wrap compact"><table class="tbl"><tbody id="byPlatform"></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>By weekday</h3>
+      <div class="table-wrap compact"><table class="tbl"><tbody id="byWeekday"></tbody></table></div>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== TRADE DIALOG ===================== -->
+<dialog id="tradeDialog">
+  <form method="dialog" id="tradeForm">
+    <header class="dlg-head">
+      <h3 id="dlgTitle">New Trade</h3>
+      <button type="button" class="btn btn-ghost" id="dlgClose">✕</button>
+    </header>
+
+    <div class="dlg-body">
+      <input type="hidden" name="id">
+      <div class="grid2">
+        <label>Entry date <input type="date" name="date" required></label>
+        <label>Symbol <input name="symbol" placeholder="NIFTY, AAPL…" required autocomplete="off"></label>
+      </div>
+      <div class="grid2">
+        <label>Side
+          <select name="side">
+            <option value="long">Long</option>
+            <option value="short">Short</option>
+          </select>
+        </label>
+        <label>Quantity <input type="number" name="qty" step="any" min="0" value="1" required></label>
+      </div>
+      <label>Platform
+        <select name="platform">
+          <option value="">—</option>
+          <option value="etrade">E*TRADE</option>
+          <option value="schwab">Schwab / thinkorswim</option>
+          <option value="fidelity">Fidelity</option>
+          <option value="fidelity-ira">Fidelity IRA</option>
+          <option value="fidelity-roth">Fidelity ROTH</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <div class="grid3">
+        <label>Entry price <input type="number" name="entry" step="any" required></label>
+        <label>Exit price <input type="number" name="exit" step="any" placeholder="leave blank if still open"></label>
+        <label>Stop loss <input type="number" name="stop" step="any" placeholder="optional"></label>
+      </div>
+      <label>Exit date <input type="date" name="exitDate" placeholder="leave blank if still open"></label>
+      <label>Entry thesis <textarea name="notes" rows="3" required placeholder="Why are you entering this trade"></textarea></label>
+      <label>Exit thesis (optional) <textarea name="exitNotes" rows="3" placeholder="Why you closed it — target hit, stop hit, thesis broken…"></textarea></label>
+
+      <div class="calc" id="calcPreview"></div>
+    </div>
+
+    <footer class="dlg-foot">
+      <button type="button" class="btn btn-danger-ghost" id="deleteBtn" hidden>Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save trade</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- ===================== NEW POSITION DIALOG ===================== -->
+<dialog id="newPositionDialog">
+  <form method="dialog" id="newPositionForm">
+    <header class="dlg-head">
+      <h3>New Position</h3>
+      <button type="button" class="btn btn-ghost" id="npDlgClose">✕</button>
+    </header>
+
+    <div class="dlg-body">
+      <div class="grid2">
+        <label>Date <input type="date" name="date" required></label>
+        <label>Symbol <input name="symbol" placeholder="NIFTY, AAPL…" required autocomplete="off"></label>
+      </div>
+      <div class="grid2">
+        <label>Side
+          <select name="side">
+            <option value="long">Long</option>
+            <option value="short">Short</option>
+          </select>
+        </label>
+        <label>Quantity <input type="number" name="qty" step="any" min="0" value="1" required></label>
+      </div>
+      <label>Entry price <input type="number" name="price" step="any" required></label>
+      <label>Platform
+        <select name="platform">
+          <option value="">—</option>
+          <option value="etrade">E*TRADE</option>
+          <option value="schwab">Schwab / thinkorswim</option>
+          <option value="fidelity">Fidelity</option>
+          <option value="fidelity-ira">Fidelity IRA</option>
+          <option value="fidelity-roth">Fidelity ROTH</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label>Thesis (optional) — reason to hold this position
+        <textarea name="thesis" rows="4" placeholder="Setup, catalyst, invalidation level, target…"></textarea>
+      </label>
+    </div>
+
+    <footer class="dlg-foot">
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-ghost" id="npCancelBtn">Cancel</button>
+      <button type="submit" class="btn btn-primary">Open position</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- ===================== POSITION DETAIL DIALOG ===================== -->
+<dialog id="positionDetailDialog" class="dlg-wide">
+  <header class="dlg-head">
+    <h3 id="pdSymSide"></h3>
+    <button type="button" class="btn btn-ghost" id="pdDlgClose">✕</button>
+  </header>
+
+  <div class="dlg-body">
+    <div class="calc" id="pdStats"></div>
+
+    <div>
+      <div class="pos-section-label" style="margin-bottom:6px">Thesis</div>
+      <div class="pos-thesis" id="pdThesisView"></div>
+      <div class="pos-thesis" id="pdThesisEdit" hidden>
+        <textarea id="pdThesisText" rows="4"></textarea>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button type="button" class="btn btn-primary" id="pdThesisSave">Save thesis</button>
+          <button type="button" class="btn btn-ghost" id="pdThesisCancel">Cancel</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost" id="pdThesisEditBtn" style="margin-top:6px">Edit thesis</button>
+    </div>
+
+    <form id="posEventForm" class="pos-logform">
+      <div class="pos-section-label" style="margin:0">Log an event</div>
+      <div class="row">
+        <label>Type
+          <select name="type" id="pevType">
+            <option value="checkin">Check-in</option>
+            <option value="add">Add to position</option>
+            <option value="trim">Trim / close</option>
+          </select>
+        </label>
+        <label>Date <input type="date" name="date" required></label>
+        <label>Price <input type="number" name="price" step="any" required></label>
+        <label id="pevQtyWrap">Quantity <input type="number" name="qty" step="any" min="0"></label>
+      </div>
+      <div class="row" id="pevRow2">
+        <label id="pevStatusWrap">Status
+          <select name="status">
+            <option value="working">Working</option>
+            <option value="not-working">Not working</option>
+            <option value="watch">Watch</option>
+          </select>
+        </label>
+        <label style="grid-column: span 3">Note <input name="note" placeholder="Why?" autocomplete="off"></label>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button type="submit" class="btn btn-primary">Log event</button>
+        <button type="button" class="btn btn-ghost" id="pevCloseRemaining">Close remaining</button>
+      </div>
+    </form>
+
+    <div>
+      <div class="pos-section-label" style="margin-bottom:6px">Timeline</div>
+      <div class="pos-timeline" id="pdTimeline"></div>
+    </div>
+  </div>
+
+  <footer class="dlg-foot">
+    <button type="button" class="btn btn-danger-ghost" id="pdDeleteBtn">Delete position</button>
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-ghost" id="pdCloseBtn">Close</button>
+  </footer>
+</dialog>
+
+<!-- ===================== QUICK GROUP DETAIL DIALOG ===================== -->
+<dialog id="quickGroupDialog" class="dlg-wide">
+  <header class="dlg-head">
+    <h3 id="qgTitle"></h3>
+    <button type="button" class="btn btn-ghost" id="qgDlgClose">✕</button>
+  </header>
+
+  <div class="dlg-body">
+    <div class="calc" id="qgStats"></div>
+    <div>
+      <div class="pos-section-label" style="margin-bottom:6px">Trades</div>
+      <div class="pos-timeline" id="qgTimeline"></div>
+    </div>
+  </div>
+
+  <footer class="dlg-foot">
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-ghost" id="qgCloseBtn">Close</button>
+  </footer>
+</dialog>
+
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+<div class="toast" id="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
