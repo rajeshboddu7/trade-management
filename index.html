@@ -21,6 +21,8 @@
     <button class="tab" data-view="stats">Stats</button>
   </nav>
   <div class="topbar-actions">
+    <span class="auth-user" id="authUserLabel" hidden></span>
+    <button class="btn btn-ghost" id="signOutBtn" hidden title="Sign out">Sign out</button>
     <button class="btn btn-primary" id="newTradeBtn">+ New Trade</button>
     <button class="btn btn-ghost" id="themeBtn" title="Toggle theme">☾</button>
     <div class="menu-wrap">
@@ -35,6 +37,24 @@
     </div>
   </div>
 </header>
+
+<!-- ===================== AUTH OVERLAY ===================== -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="brand" style="margin-bottom:6px">
+      <span class="brand-mark">◧</span>
+      <span>Trade Management</span>
+    </div>
+    <p class="muted" style="margin:0 0 14px">Sign in to sync your trades and positions across devices.</p>
+    <label>Email <input type="email" id="authEmail" autocomplete="username" required></label>
+    <label>Password <input type="password" id="authPassword" autocomplete="current-password" required></label>
+    <div class="auth-error" id="authError" hidden></div>
+    <div class="auth-actions">
+      <button class="btn btn-primary" id="authSignInBtn">Sign in</button>
+      <button class="btn btn-ghost" id="authSignUpBtn">Create account</button>
+    </div>
+  </div>
+</div>
 
 <!-- Summary strip -->
 <section class="summary" id="summary"></section>
@@ -422,6 +442,7 @@
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 </body>
 </html>

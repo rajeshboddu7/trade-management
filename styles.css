@@ -69,6 +69,29 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tab:hover { color: var(--text); }
 .tab.is-active { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.auth-user { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
+.muted { color: var(--muted); font-size: 13px; }
+
+/* ---------- auth overlay ---------- */
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+}
+.auth-box {
+  width: min(340px, calc(100vw - 32px));
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.35); padding: 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.auth-box label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.auth-box input {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-weight: 400; color: var(--text); font-size: 14px; width: 100%;
+}
+.auth-box input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+.auth-error { background: var(--loss-bg); color: var(--loss); border-radius: 8px; padding: 8px 11px; font-size: 12.5px; }
+.auth-actions { display: flex; gap: 8px; margin-top: 4px; }
+.auth-actions .btn { flex: 1; }
 
 .btn {
   border: 1px solid var(--border); background: var(--surface);

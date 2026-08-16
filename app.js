@@ -1,11 +1,41 @@
-/* Trade Management — local-first trade journal with a P/L calendar.
-   All data lives in this browser's localStorage. No network calls. */
+/* Trade Management — trade journal with a P/L calendar.
+   Local cache in localStorage; synced cross-device via Supabase when signed in. */
 (() => {
 'use strict';
 
 const KEY_TRADES    = 'tm.trades.v1';
 const KEY_PREFS     = 'tm.prefs.v1';
 const KEY_POSITIONS = 'tm.positions.v1';
+
+/* ============================ cloud sync (Supabase) ============================ */
+
+const SUPABASE_URL = 'https://aqqotvfzsvcmlaqyaakn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcW90dmZ6c3ZjbWxhcXlhYWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4NDYxMDEsImV4cCI6MjEwMjQyMjEwMX0.Ic44bF9B4K1fGpfm8suCRs2p8gYgb9BFRDIGcfwJ-cg';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+
+async function syncToCloud(key, value) {
+  if (!currentUser) return;
+  const { error } = await sb.from('app_state').upsert({
+    user_id: currentUser.id, key, data: value, updated_at: new Date().toISOString(),
+  });
+  if (error) console.error(`Cloud sync failed for "${key}":`, error.message);
+}
+
+/** Pull all cloud state for the signed-in user and overwrite the local cache with it —
+ *  cloud is the source of truth once signed in, so this is what makes cross-device work. */
+async function pullCloudState() {
+  const { data, error } = await sb.from('app_state').select('key,data').eq('user_id', currentUser.id);
+  if (error) { toast('Could not load cloud data: ' + error.message); return; }
+  const map = {};
+  (data || []).forEach(row => { map[row.key] = row.data; });
+  trades = Array.isArray(map.trades) ? map.trades : [];
+  positions = Array.isArray(map.positions) ? map.positions : [];
+  prefs = Object.assign({ theme: 'dark' }, map.prefs || {});
+  localStorage.setItem(KEY_TRADES, JSON.stringify(trades));
+  localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
+  localStorage.setItem(KEY_PREFS, JSON.stringify(prefs));
+}
 
 /* ============================ state ============================ */
 
@@ -27,12 +57,15 @@ function load(key, fallback) {
 }
 function saveTrades() {
   localStorage.setItem(KEY_TRADES, JSON.stringify(trades));
+  syncToCloud('trades', trades);
 }
 function savePrefs() {
   localStorage.setItem(KEY_PREFS, JSON.stringify(prefs));
+  syncToCloud('prefs', prefs);
 }
 function savePositions() {
   localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
+  syncToCloud('positions', positions);
 }
 
 /* ============================ helpers ============================ */
@@ -1457,6 +1490,60 @@ $$('input[name="symbol"]').forEach(el => {
 $$('input[type="date"]').forEach(el => {
   el.addEventListener('focus', () => { try { el.showPicker(); } catch {} });
   el.addEventListener('click', () => { try { el.showPicker(); } catch {} });
+});
+
+/* ============================ auth ============================ */
+
+function showAuthOverlay(show) {
+  $('#authOverlay').style.display = show ? 'flex' : 'none';
+}
+function setAuthError(msg) {
+  const el = $('#authError');
+  if (!msg) { el.hidden = true; return; }
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+async function authSignIn() {
+  setAuthError('');
+  const email = $('#authEmail').value.trim();
+  const password = $('#authPassword').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) setAuthError(error.message);
+}
+async function authSignUp() {
+  setAuthError('');
+  const email = $('#authEmail').value.trim();
+  const password = $('#authPassword').value;
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if (error) { setAuthError(error.message); return; }
+  if (!data.session) toast('Account created — check your email to confirm, then sign in.');
+}
+async function authSignOut() {
+  await sb.auth.signOut();
+}
+
+$('#authSignInBtn').addEventListener('click', authSignIn);
+$('#authSignUpBtn').addEventListener('click', authSignUp);
+$('#authPassword').addEventListener('keydown', e => { if (e.key === 'Enter') authSignIn(); });
+$('#signOutBtn').addEventListener('click', authSignOut);
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session && session.user) {
+    currentUser = session.user;
+    showAuthOverlay(false);
+    $('#authUserLabel').hidden = false;
+    $('#authUserLabel').textContent = currentUser.email;
+    $('#signOutBtn').hidden = false;
+    await pullCloudState();
+    applyTheme();
+    renderAll();
+  } else {
+    currentUser = null;
+    showAuthOverlay(true);
+    $('#authUserLabel').hidden = true;
+    $('#signOutBtn').hidden = true;
+  }
 });
 
 /* ============================ boot ============================ */
