@@ -821,10 +821,10 @@ async function callGeminiApi(prompt, useSearch) {
 async function callGeminiEquityAnalysis(symbol, tech, contextNote) {
   const key = getGeminiApiKey();
   if (!key) throw new Error('No Gemini API key set — paste one into the field and click "Save key" first.');
-  if (!/^AIza[\w-]{20,}$/.test(key)) {
+  if (!/^AIza[\w-]{20,}$/.test(key) && !/^AQ\.[\w.-]{20,}$/.test(key)) {
     throw new Error(
       `That doesn't look like a Gemini API key (yours: "${key.slice(0, 6)}…${key.slice(-4)}", ${key.length} chars). ` +
-      'A real key from aistudio.google.com/apikey starts with "AIza". If yours doesn\'t, you likely copied an OAuth Client ID or something else — go back to aistudio.google.com/apikey and copy the API key value specifically.');
+      'A real key from aistudio.google.com/apikey starts with "AIza" (older keys) or "AQ." (newer keys). If yours doesn\'t, you likely copied an OAuth Client ID or something else — go back to aistudio.google.com/apikey and copy the API key value specifically.');
   }
 
   const prompt = `You are giving an unbiased equity analysis for ${symbol}.
