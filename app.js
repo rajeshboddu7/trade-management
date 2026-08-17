@@ -6,6 +6,7 @@
 const KEY_TRADES    = 'tm.trades.v1';
 const KEY_PREFS     = 'tm.prefs.v1';
 const KEY_POSITIONS = 'tm.positions.v1';
+const KEY_SCANNER   = 'tm.scanner.v1';
 
 /* ============================ cloud sync (Supabase) ============================ */
 
@@ -51,10 +52,14 @@ async function pullCloudState() {
   trades = mergedTrades;
   positions = mergedPositions;
   prefs = Object.assign({ theme: 'dark' }, prefs, map.prefs || {});
+  // Scanner results are written only by scanner.py (via the Supabase REST API,
+  // not this client), so the cloud copy is always authoritative -- no merge needed.
+  if (map.scanner) scannerData = map.scanner;
 
   localStorage.setItem(KEY_TRADES, JSON.stringify(trades));
   localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
   localStorage.setItem(KEY_PREFS, JSON.stringify(prefs));
+  if (scannerData) localStorage.setItem(KEY_SCANNER, JSON.stringify(scannerData));
 
   // Push anything this browser had that the cloud didn't, so the cloud catches up too.
   if (tradesGrew) await syncToCloud('trades', trades);
@@ -68,6 +73,7 @@ let trades = load(KEY_TRADES, []);
 let prefs  = Object.assign({ theme: 'dark' }, load(KEY_PREFS, {}));
 const CURRENCY = '$';
 let positions = load(KEY_POSITIONS, []);
+let scannerData = load(KEY_SCANNER, null);
 
 let cursor = startOfMonth(new Date());   // month shown in the calendar
 let selectedDate = null;                 // 'YYYY-MM-DD'
@@ -298,6 +304,7 @@ function renderAll() {
   renderPositions();
   renderTradesCheck();
   renderStats();
+  renderScanner();
 }
 
 /* ---- summary strip ---- */
@@ -896,6 +903,49 @@ function renderTradesCheck() {
     </tr>`);
 }
 
+/* ---- swing scanner ---- */
+const SCAN_PATTERN_GROUPS = [
+  { key: 'ipo_base', bodyId: '#scanBodyIpoBase', emptyId: '#scanEmptyIpoBase' },
+  { key: 'downtrend_reversal', bodyId: '#scanBodyDowntrendReversal', emptyId: '#scanEmptyDowntrendReversal' },
+  { key: 'high_consolidation', bodyId: '#scanBodyHighConsolidation', emptyId: '#scanEmptyHighConsolidation' },
+];
+
+function scanMatchRow(m) {
+  return `
+    <tr>
+      <td><b>${esc(m.ticker)}</b></td>
+      <td>${esc(m.sector || '—')}</td>
+      <td class="num">${m.last_close != null ? fmtMoney(m.last_close) : '—'}</td>
+      <td class="num">${m.rs_percentile != null ? m.rs_percentile.toFixed(1) : '—'}</td>
+      <td>${m.sector_leader ? '<span class="pill working">Leader</span>' : ''}</td>
+      <td>${m.leading_theme ? '<span class="pill working">Theme</span>' : ''}</td>
+      <td>${m.earnings_within_14d ? '<span class="pill watch">Soon</span>' : ''}</td>
+    </tr>`;
+}
+
+function renderScanner() {
+  const matches = (scannerData && scannerData.matches) || [];
+
+  $('#scanSummaryGrid').innerHTML = `
+    <div class="stat"><div class="stat-label">Matches</div><div class="stat-value">${matches.length}</div></div>
+    <div class="stat"><div class="stat-label">Universe file</div>
+      <div class="stat-value" style="font-size:16px">${scannerData ? esc(scannerData.universeFile || '—') : '—'}</div></div>`;
+
+  $('#scanGeneratedAt').textContent = scannerData && scannerData.generatedAt
+    ? `— last run ${new Date(scannerData.generatedAt).toLocaleString()}`
+    : '';
+
+  $('#scanEmpty').hidden = matches.length > 0;
+
+  // A ticker can match more than one pattern -- it appears in every group it
+  // matched, since these are independent setups, not mutually exclusive categories.
+  SCAN_PATTERN_GROUPS.forEach(({ key, bodyId, emptyId }) => {
+    const group = matches.filter(m => (m.patterns || '').split(', ').includes(key));
+    $(emptyId).hidden = group.length > 0;
+    $(bodyId).innerHTML = group.map(scanMatchRow).join('');
+  });
+}
+
 /* ---- stats ---- */
 function renderStats() {
   const list = trades.map(withDerived);
@@ -1390,6 +1440,7 @@ $('#tabs').addEventListener('click', e => {
   $$('.view').forEach(v => v.classList.toggle('is-active', v.id === `view-${btn.dataset.view}`));
   if (btn.dataset.view === 'trades') renderTrades();
   if (btn.dataset.view === 'tradescheck') renderTradesCheck();
+  if (btn.dataset.view === 'scanner') renderScanner();
 });
 
 $('#newTradeBtn').addEventListener('click', () => openDialog(null, selectedDate));

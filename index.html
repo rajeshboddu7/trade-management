@@ -19,6 +19,7 @@
     <button class="tab" data-view="positions">Positions</button>
     <button class="tab" data-view="stats">Stats</button>
     <button class="tab" data-view="tradescheck">Trades Check</button>
+    <button class="tab" data-view="scanner">Scanner</button>
   </nav>
   <div class="topbar-actions">
     <span class="auth-user" id="authUserLabel" hidden></span>
@@ -275,6 +276,38 @@
       <h3>Rule 4 — Capital cap: $20,000 per symbol</h3>
       <div class="table-wrap compact"><table class="tbl"><tbody id="tcRule4Body"></tbody></table></div>
       <div class="empty" id="tcRule4Empty" hidden>Nothing over the cap.</div>
+    </div>
+  </section>
+
+  <section class="view" id="view-scanner">
+    <div class="stat-grid" id="scanSummaryGrid"></div>
+    <div class="empty" id="scanEmpty" hidden>No scan results yet — run scanner.py with SCANNER_SUPABASE_EMAIL/PASSWORD set to deliver matches here.</div>
+
+    <div class="panel">
+      <h3>IPO-high breakout / consolidation</h3>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Ticker</th><th>Sector</th><th class="num">Last</th><th class="num">RS %ile</th><th>Leader</th><th>Theme</th><th>Earnings</th></tr></thead>
+        <tbody id="scanBodyIpoBase"></tbody>
+      </table></div>
+      <div class="empty" id="scanEmptyIpoBase" hidden>No matches.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Downtrend reversal</h3>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Ticker</th><th>Sector</th><th class="num">Last</th><th class="num">RS %ile</th><th>Leader</th><th>Theme</th><th>Earnings</th></tr></thead>
+        <tbody id="scanBodyDowntrendReversal"></tbody>
+      </table></div>
+      <div class="empty" id="scanEmptyDowntrendReversal" hidden>No matches.</div>
+    </div>
+
+    <div class="panel">
+      <h3>52-week/all-time-high consolidation (volume dry-up) <span class="mono" id="scanGeneratedAt" style="font-weight:400"></span></h3>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Ticker</th><th>Sector</th><th class="num">Last</th><th class="num">RS %ile</th><th>Leader</th><th>Theme</th><th>Earnings</th></tr></thead>
+        <tbody id="scanBodyHighConsolidation"></tbody>
+      </table></div>
+      <div class="empty" id="scanEmptyHighConsolidation" hidden>No matches.</div>
     </div>
   </section>
 </main>
