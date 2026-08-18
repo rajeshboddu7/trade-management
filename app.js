@@ -176,13 +176,14 @@ function rOf(t) {
   if (risk <= 0) return null;
   return pnl / risk;
 }
-/** Days held: entry date (t.entryDate if set, else t.date) to exit date (t.exitDate, or today if still open).
+/** Trading days held (weekends excluded — market's closed, so they shouldn't count): entry date
+ *  (t.entryDate if set, else t.date) to exit date (t.exitDate, or today if still open).
  *  null when the trade is closed but has no recorded exit date (e.g. legacy data from before this field existed). */
 function daysInTrade(t) {
   const entry = t.entryDate || t.date;
-  if (isOpenTrade(t)) return daysBetween(entry, ymd(new Date()));
+  if (isOpenTrade(t)) return tradingDaysBetween(entry, ymd(new Date()));
   if (!t.exitDate) return null;
-  return daysBetween(entry, t.exitDate);
+  return tradingDaysBetween(entry, t.exitDate);
 }
 
 function withDerived(t) {
