@@ -890,6 +890,18 @@ async function showPositionChart(id) {
     : `<span class="muted">Chart unavailable right now.</span>`;
 }
 
+/** Manual "pull the latest from cloud" action. pullCloudState() normally only runs once, right
+ *  after sign-in (see onAuthStateChange below) — a tab left open (this site or a VS Code Live
+ *  Preview tab pointed at the same local files) has no other way to learn about a change made
+ *  from elsewhere until it's reloaded. This lets you force that reconciliation on demand. */
+async function syncNow() {
+  if (!currentUser) { toast('Sign in first to sync.'); return; }
+  toast('Syncing…');
+  await pullCloudState();
+  renderAll();
+  toast('Synced with cloud.');
+}
+
 /** Generates charts for existing trades/closed positions that don't have one yet — covers data
  *  that predates this feature. Individual trades linked to a position are skipped (they're
  *  covered by that position's own lifecycle chart, not their own). Runs one at a time (each
@@ -1678,6 +1690,7 @@ $('#moreMenu').addEventListener('click', e => {
   if (!act) return;
   $('#moreMenu').hidden = true;
   ({
+    'sync-now': syncNow,
     'export-json': exportJson,
     'export-csv': exportCsv,
     'import-json': () => $('#importFile').click(),
