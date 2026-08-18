@@ -1034,14 +1034,14 @@ const SCAN_PATTERN_GROUPS = [
 ];
 
 function scanMatchRow(m) {
+  const industry = m.industry || m.sector || '—';
   return `
     <tr>
       <td><b>${esc(m.ticker)}</b></td>
-      <td>${esc(m.sector || '—')}</td>
+      <td class="${m.leading_theme ? 'leading-theme' : ''}" title="${m.leading_theme ? 'Leading theme — one of the strongest relative-strength industries this run' : ''}">${esc(industry)}</td>
       <td class="num">${m.last_close != null ? fmtMoney(m.last_close) : '—'}</td>
       <td class="num">${m.rs_percentile != null ? m.rs_percentile.toFixed(1) : '—'}</td>
       <td>${m.sector_leader ? '<span class="pill working">Leader</span>' : ''}</td>
-      <td>${m.leading_theme ? '<span class="pill working">Theme</span>' : ''}</td>
       <td>${m.earnings_within_14d ? '<span class="pill watch">Soon</span>' : ''}</td>
     </tr>`;
 }

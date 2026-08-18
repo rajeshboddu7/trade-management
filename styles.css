@@ -227,6 +227,8 @@ main { padding: 20px; max-width: 1500px; margin: 0 auto; }
 
 .pos { color: var(--win); } .neg { color: var(--loss); } .zero { color: var(--flat); }
 
+.leading-theme { color: var(--accent); font-weight: 700; }
+
 /* ---------- positions ---------- */
 .pos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 20px; }
 .pos-card {
