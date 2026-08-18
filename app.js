@@ -1100,10 +1100,28 @@ function drawMonths(list) {
 /* ============================ dialog ============================ */
 
 const dlg = $('#tradeDialog');
+const DEFAULT_STOP_PCT = 0.05;
+
+/** 5% below entry for longs, 5% above for shorts (a short's stop must sit above entry — that's
+ *  the losing direction for a short — so a flat "subtract 5%" would be wrong on that side). */
+function computeDefaultStop(entry, side) {
+  if (!isFinite(entry) || entry <= 0) return null;
+  return side === 'short' ? entry * (1 + DEFAULT_STOP_PCT) : entry * (1 - DEFAULT_STOP_PCT);
+}
+
+/** Re-fills Stop loss with the default whenever entry/side changes, unless the user has typed
+ *  into the Stop loss field themselves this dialog session (tracked via dataset.stopTouched). */
+function syncDefaultStop() {
+  const f = $('#tradeForm');
+  if (f.dataset.stopTouched === '1') return;
+  const def = computeDefaultStop(parseFloat(f.elements.entry.value), f.elements.side.value);
+  if (def != null) f.elements.stop.value = def.toFixed(2);
+}
 
 function openDialog(trade, presetDate) {
   const f = $('#tradeForm');
   f.reset();
+  f.dataset.stopTouched = '';
   $('#dlgTitle').textContent = trade ? 'Edit Trade' : 'New Trade';
   $('#deleteBtn').hidden = !trade;
 
@@ -1111,11 +1129,13 @@ function openDialog(trade, presetDate) {
     for (const [k, v] of Object.entries(trade)) {
       if (f.elements[k]) f.elements[k].value = v ?? '';
     }
+    if (trade.stop != null && trade.stop !== '') f.dataset.stopTouched = '1';
   } else {
     f.elements.id.value = '';
     f.elements.date.value = presetDate || ymd(new Date());
     f.elements.qty.value = 1;
   }
+  syncDefaultStop();
   updateCalc();
   dlg.showModal();
   setTimeout(() => f.elements[trade ? 'entry' : 'symbol'].focus(), 30);
@@ -1157,7 +1177,11 @@ function updateCalc() {
 
 function closeDialog() { dlg.close(); }
 
-$('#tradeForm').addEventListener('input', updateCalc);
+$('#tradeForm').addEventListener('input', e => {
+  if (e.target.name === 'stop') $('#tradeForm').dataset.stopTouched = '1';
+  else if (e.target.name === 'entry' || e.target.name === 'side') syncDefaultStop();
+  updateCalc();
+});
 $('#tradeForm').addEventListener('submit', e => {
   e.preventDefault();
   const t = readForm();
