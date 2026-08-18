@@ -847,6 +847,26 @@ async function showPositionChart(id) {
     : `<span class="muted">Chart unavailable right now.</span>`;
 }
 
+/** Generates charts for existing trades/closed positions that don't have one yet — covers data
+ *  that predates this feature. Individual trades linked to a position are skipped (they're
+ *  covered by that position's own lifecycle chart, not their own). Runs one at a time (each
+ *  generateTradeChart/generatePositionChart call is awaited in turn) so it doesn't burst Yahoo/
+ *  Finnhub with concurrent requests. */
+async function backfillTradeCharts() {
+  if (!currentUser) { toast('Sign in first to generate charts.'); return; }
+  const targetTrades = trades.filter(t => !t.positionId && !t.chartPath && t.entry);
+  const targetPositions = positions.filter(p => p.status === 'closed' && !p.chartPath);
+  const total = targetTrades.length + targetPositions.length;
+  if (!total) { toast('Every trade and closed position already has a chart.'); return; }
+
+  toast(`Generating ${total} chart${total === 1 ? '' : 's'}… this may take a bit — feel free to keep using the app.`);
+  let done = 0;
+  for (const t of targetTrades) { await generateTradeChart(t); done++; }
+  for (const p of targetPositions) { await generatePositionChart(p); done++; }
+  renderAll();
+  toast(`Backfilled ${done} chart${done === 1 ? '' : 's'}.`);
+}
+
 /* ---- trades check: flag open trades/positions against a fixed rule set ---- */
 const TC_LOSS_CAP_PCT = -10;               // rule 1: unrealized loss must stay above this
 const TC_EARLY_LOSS_PCT = -2;              // rule 2: loss threshold within the early window
@@ -1614,6 +1634,7 @@ $('#moreMenu').addEventListener('click', e => {
     'export-csv': exportCsv,
     'import-json': () => $('#importFile').click(),
     'sample': loadSample,
+    'backfill-charts': backfillTradeCharts,
     'wipe': wipe,
   })[act]?.();
 });
