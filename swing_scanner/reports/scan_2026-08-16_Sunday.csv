@@ -1,0 +1,2 @@
+ticker,patterns,ipo_base_detail,downtrend_reversal_detail,high_consolidation_detail,last_close,avg_dollar_vol_20d,sector,industry,rs_percentile,sector_leader,leading_theme,earnings_within_14d,earnings_date
+NVDA,downtrend_reversal,,"{'match': True, 'reclaim_level': 214.39, 'higher_low': 190.01, 'pct_above_reclaim': 5.02}",,225.16,25197598057.0,Technology,Semiconductors,35.0,False,False,True,2026-08-26 16:00:00
