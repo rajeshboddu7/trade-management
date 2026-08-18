@@ -570,6 +570,14 @@ function stopFlagDot(t, price) {
   return ` <span class="stop-flag ${breached ? 'stop-breach' : 'stop-safe'}" title="${esc(title)}"></span>`;
 }
 
+/** Symbol-cell wrapper for stopFlagDot() — reads the live price straight from the cache since the
+ *  Symbol column renders independently of currentPriceCell(). */
+function symbolStopFlagDot(t) {
+  const c = currentPriceCache[t.symbol];
+  if (!c || c.loading || c.error || c.price == null) return '';
+  return stopFlagDot(t, c.price);
+}
+
 function currentPriceCell(t) {
   const c = currentPriceCache[t.symbol];
   if (!c) { ensureCurrentPrice(t.symbol); return '<span class="pill">…</span>'; }
@@ -578,7 +586,7 @@ function currentPriceCell(t) {
   const up = t.side === 'short' ? c.price < t.entry : c.price > t.entry;
   const down = t.side === 'short' ? c.price > t.entry : c.price < t.entry;
   const toneClass = up ? 'pos' : down ? 'neg' : 'zero';
-  return `<span class="${toneClass}">${fmtNum(c.price)}</span>${stopFlagDot(t, c.price)}`;
+  return `<span class="${toneClass}">${fmtNum(c.price)}</span>`;
 }
 
 /** Live unrealized % move from entry, or null if no usable quote yet. */
@@ -609,7 +617,7 @@ function renderTrades() {
   $('#tradeBody').innerHTML = list.map(t => `
     <tr data-id="${t.id}">
       <td class="mono">${t.date}</td>
-      <td><b>${esc(t.symbol)}</b></td>
+      <td><b>${esc(t.symbol)}</b>${symbolStopFlagDot(t)}</td>
       <td><span class="pill ${t.side}">${t.side}</span></td>
       <td>${t.platform ? `<span class="pill">${platformLabel(t.platform)}</span>` : '—'}</td>
       <td class="num">${fmtNum(t.qty)}</td>
