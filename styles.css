@@ -350,6 +350,13 @@ input[name="symbol"] { text-transform: uppercase; }
 .calc b { display: block; font-size: 17px; }
 .calc i { font-style: normal; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 
+.trade-chart-head { display: flex; align-items: center; justify-content: space-between;
+  margin: 4px 0 6px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+#tradeChartBody { background: var(--surface-2); border-radius: 9px; padding: 8px;
+  display: flex; align-items: center; justify-content: center; min-height: 60px; }
+#tradeChartBody img { width: 100%; max-width: 100%; border-radius: 6px; display: block; }
+#tradeChartBody .muted { color: var(--muted); font-size: 13px; padding: 14px; }
+
 /* ---------- toast ---------- */
 .toast {
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);

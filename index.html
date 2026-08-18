@@ -356,6 +356,14 @@
       <label>Exit thesis (optional) <textarea name="exitNotes" rows="3" placeholder="Why you closed it — target hit, stop hit, thesis broken…"></textarea></label>
 
       <div class="calc" id="calcPreview"></div>
+
+      <div id="tradeChartWrap" hidden>
+        <div class="trade-chart-head">
+          <span>Daily chart</span>
+          <button type="button" class="btn btn-ghost" id="regenChartBtn">Regenerate</button>
+        </div>
+        <div id="tradeChartBody"></div>
+      </div>
     </div>
 
     <footer class="dlg-foot">
@@ -506,6 +514,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="trade-math.js"></script>
+<script src="chart-render.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

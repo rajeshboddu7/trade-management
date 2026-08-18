@@ -678,8 +678,8 @@ function renderPositions() {
  *  Yahoo doesn't reliably send CORS headers, so fall back to public CORS proxies on failure.
  *  corsproxy.io now rejects most free/anonymous traffic ("Server-side requests are not allowed
  *  on your plan"), so allorigins is tried first with corsproxy kept as a last-resort fallback. */
-async function fetchYahooChart(symbol) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=6mo`;
+async function fetchYahooChart(symbol, range = '6mo') {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=${range}`;
   const attempts = [
     url,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -699,6 +699,90 @@ async function fetchYahooChart(symbol) {
     }
   }
   throw new Error(`Could not fetch price data for ${symbol} (${lastErr ? lastErr.message : 'unknown error'}). Yahoo may be blocking direct/proxied browser requests right now — check the symbol is valid, or try again.`);
+}
+
+/* ---- trade chart screenshots (daily-timeframe, entry/exit markers) ---- */
+
+const CHART_LOOKBACK_DAYS = 40; // calendar days of context shown before the entry marker
+
+/** Smallest Yahoo `range` value that reaches back `daysNeeded` days from today. */
+function yahooRangeFor(daysNeeded) {
+  if (daysNeeded <= 85) return '3mo';
+  if (daysNeeded <= 170) return '6mo';
+  if (daysNeeded <= 340) return '1y';
+  if (daysNeeded <= 680) return '2y';
+  return '5y';
+}
+
+function barsFromYahooChart(result) {
+  const ts = result.timestamp || [];
+  const q = (result.indicators && result.indicators.quote && result.indicators.quote[0]) || {};
+  const bars = [];
+  for (let i = 0; i < ts.length; i++) {
+    const o = q.open && q.open[i], h = q.high && q.high[i], l = q.low && q.low[i], c = q.close && q.close[i];
+    if (o == null || h == null || l == null || c == null) continue;
+    bars.push({ date: ymd(new Date(ts[i] * 1000)), open: o, high: h, low: l, close: c });
+  }
+  return bars;
+}
+
+/** Builds and uploads the chart image for a trade — entry marker only while open, entry+exit
+ *  once closed — to a fixed path keyed by trade id, so closing a trade overwrites the
+ *  entry-only image in place instead of leaving a second, now-redundant file behind. Never
+ *  throws; a failure just leaves the trade without a chart (or its last successful one). */
+async function generateTradeChart(t) {
+  if (!currentUser || !t.entry || !t.symbol) return;
+  try {
+    const today = ymd(new Date());
+    const entryDate = t.entryDate || t.date;
+    const endDate = t.exitDate || today;
+    const startDate = ymd(new Date(parseYmd(entryDate).getTime() - CHART_LOOKBACK_DAYS * 86400000));
+    const result = await fetchYahooChart(t.symbol, yahooRangeFor(daysBetween(startDate, today)));
+    const bars = barsFromYahooChart(result).filter(b => b.date >= startDate && b.date <= endDate);
+
+    const canvas = ChartRender.renderTradeChart(bars, {
+      symbol: t.symbol, side: t.side,
+      entryDate, entryPrice: t.entry,
+      exitDate: t.exitDate || null, exitPrice: t.exit ?? null,
+    });
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Canvas produced no image data');
+
+    const path = `${currentUser.id}/${t.id}.png`;
+    const { error } = await sb.storage.from('trade-charts').upload(path, blob, {
+      contentType: 'image/png', upsert: true,
+    });
+    if (error) throw error;
+
+    const i = trades.findIndex(x => x.id === t.id);
+    if (i >= 0 && trades[i].chartPath !== path) { trades[i].chartPath = path; saveTrades(); }
+    if ($('#tradeForm').elements.id.value === t.id) showTradeChart(t.id);
+  } catch (err) {
+    console.error(`Chart generation failed for ${t.symbol}:`, err.message || err);
+    if ($('#tradeForm').elements.id.value === t.id) {
+      $('#tradeChartBody').innerHTML = `<span class="muted">Chart failed to load — ${esc(err.message || 'unknown error')}</span>`;
+    }
+  }
+}
+
+async function getTradeChartUrl(path) {
+  const { data, error } = await sb.storage.from('trade-charts').createSignedUrl(path, 3600);
+  if (error) { console.error('Could not load chart:', error.message); return null; }
+  return data.signedUrl;
+}
+
+/** Shows the chart for trade `id` in the open trade dialog, fetching a fresh signed URL. */
+async function showTradeChart(id) {
+  const t = trades.find(x => x.id === id);
+  const wrap = $('#tradeChartWrap'), body = $('#tradeChartBody');
+  if (!t || !t.chartPath) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  body.innerHTML = `<span class="muted">Loading…</span>`;
+  const url = await getTradeChartUrl(t.chartPath);
+  // The dialog may have been closed/reopened for a different trade while this was in flight.
+  if ($('#tradeForm').elements.id.value !== id) return;
+  body.innerHTML = url ? `<img src="${esc(url)}" alt="Daily chart for ${esc(t.symbol)}">`
+    : `<span class="muted">Chart unavailable right now.</span>`;
 }
 
 /* ---- trades check: flag open trades/positions against a fixed rule set ---- */
@@ -1035,6 +1119,7 @@ function openDialog(trade, presetDate) {
   }
   syncDefaultStop();
   updateCalc();
+  if (trade) showTradeChart(trade.id); else $('#tradeChartWrap').hidden = true;
   dlg.showModal();
   setTimeout(() => f.elements[trade ? 'entry' : 'symbol'].focus(), 30);
 }
@@ -1085,18 +1170,31 @@ $('#tradeForm').addEventListener('submit', e => {
   const t = readForm();
   if (!t.date || !t.symbol || !t.notes) return;
   const i = trades.findIndex(x => x.id === t.id);
+  const prev = i >= 0 ? trades[i] : null;
   // Editing a position-generated trade through this dialog has no field for positionId (it's
   // not user-editable), so carry the existing link forward instead of letting the save drop it.
-  if (i >= 0) { t.positionId = trades[i].positionId ?? null; trades[i] = t; } else trades.push(t);
+  if (i >= 0) { t.positionId = prev.positionId ?? null; t.chartPath = prev.chartPath ?? null; trades[i] = t; } else trades.push(t);
   saveTrades();
   selectedDate = t.date;
   cursor = startOfMonth(parseYmd(t.date));
   closeDialog();
   renderAll();
   toast(i >= 0 ? 'Trade updated' : 'Trade saved');
+  // Regenerate whenever there's no chart yet, or an entry/exit field just changed — covers a
+  // brand-new trade, a trade going from open to closed, and a correction to either price/date.
+  const entryOrExitChanged = !prev || prev.entry !== t.entry || (prev.entryDate || prev.date) !== (t.entryDate || t.date)
+    || prev.exit !== t.exit || prev.exitDate !== t.exitDate;
+  if (!t.chartPath || entryOrExitChanged) generateTradeChart(t);
 });
 $('#cancelBtn').addEventListener('click', closeDialog);
 $('#dlgClose').addEventListener('click', closeDialog);
+$('#regenChartBtn').addEventListener('click', () => {
+  const id = $('#tradeForm').elements.id.value;
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  $('#tradeChartBody').innerHTML = `<span class="muted">Regenerating…</span>`;
+  generateTradeChart(t);
+});
 $('#deleteBtn').addEventListener('click', () => {
   const id = $('#tradeForm').elements.id.value;
   if (!id || !confirm('Delete this trade? This cannot be undone.')) return;
