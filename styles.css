@@ -189,6 +189,10 @@ main { padding: 20px; max-width: 1500px; margin: 0 auto; }
 .lg-win { background: var(--win); } .lg-loss { background: var(--loss); } .lg-flat { background: var(--flat); }
 .cal-legend .hint { margin-left: 4px; }
 
+.stop-flag { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; }
+.stop-flag.stop-safe { background: var(--win); }
+.stop-flag.stop-breach { background: var(--loss); box-shadow: 0 0 0 3px var(--loss-bg); }
+
 /* ---------- day panel ---------- */
 .daypanel {
   background: var(--surface); border: 1px solid var(--border);

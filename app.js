@@ -549,6 +549,17 @@ function quickGroupUnrealizedRow(g) {
   return `<div class="pos-card-row"><span>Unrealized P/L</span><b class="${cls(upl)}">${fmtMoney(upl, { sign: true })}</b></div>`;
 }
 
+/** Flags whether the live price has breached the stop, side-aware: a long is breached at or
+ *  below its stop; a short (whose stop sits above entry) is breached at or above its stop. */
+function stopFlagDot(t, price) {
+  if (t.pnl != null || t.stop == null || t.stop === '' || !isFinite(t.stop)) return '';
+  const breached = t.side === 'short' ? price >= t.stop : price <= t.stop;
+  const title = breached
+    ? `Stop breached — price is ${t.side === 'short' ? 'at/above' : 'at/below'} stop (${fmtNum(t.stop)})`
+    : `Price is ${t.side === 'short' ? 'below' : 'above'} stop loss (${fmtNum(t.stop)})`;
+  return ` <span class="stop-flag ${breached ? 'stop-breach' : 'stop-safe'}" title="${esc(title)}"></span>`;
+}
+
 function currentPriceCell(t) {
   const c = currentPriceCache[t.symbol];
   if (!c) { ensureCurrentPrice(t.symbol); return '<span class="pill">…</span>'; }
@@ -557,7 +568,7 @@ function currentPriceCell(t) {
   const up = t.side === 'short' ? c.price < t.entry : c.price > t.entry;
   const down = t.side === 'short' ? c.price > t.entry : c.price < t.entry;
   const toneClass = up ? 'pos' : down ? 'neg' : 'zero';
-  return `<span class="${toneClass}">${fmtNum(c.price)}</span>`;
+  return `<span class="${toneClass}">${fmtNum(c.price)}</span>${stopFlagDot(t, c.price)}`;
 }
 
 /** Live unrealized % move from entry, or null if no usable quote yet. */
