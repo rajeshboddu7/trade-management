@@ -105,7 +105,7 @@ function renderChart(bars, { symbol, markers = [] } = {}) {
     if (dir === 'up') { ctx.moveTo(cx - 4, cy - 8); ctx.lineTo(cx + 4, cy - 8); ctx.lineTo(cx, cy - 2); }
     else { ctx.moveTo(cx - 4, cy + 8); ctx.lineTo(cx + 4, cy + 8); ctx.lineTo(cx, cy + 2); }
     ctx.closePath(); ctx.fill();
-    ctx.font = 'bold 11px ui-monospace, monospace';
+    ctx.font = 'bold 12px ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`${label} ${price.toFixed(2)}`, cx, dir === 'up' ? tailY + 14 : tailY - 8);
     ctx.textAlign = 'left';
