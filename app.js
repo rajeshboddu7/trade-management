@@ -187,6 +187,11 @@ function resyncPositionTrades(pos) {
   pos.status = qty <= 0 && sortedEvents(pos).some(e => e.type === 'trim') ? 'closed' : 'open';
   pos.closedDate = pos.status === 'closed' ? sortedEvents(pos).slice(-1)[0].date : null;
   saveTrades();
+  // No screenshot for individual scale-in/trim events while the position is open — only once
+  // it's fully closed, showing the whole lifecycle on one chart. Re-runs (and re-generates)
+  // on every resync while already closed too, so editing an old event after the fact still
+  // produces an accurate chart, not a stale one.
+  if (pos.status === 'closed') generatePositionChart(pos);
 }
 
 /* ============================ rendering ============================ */
@@ -785,6 +790,63 @@ async function showTradeChart(id) {
     : `<span class="muted">Chart unavailable right now.</span>`;
 }
 
+/** One chart per fully-closed position, covering its whole lifecycle: entry, every add/trim,
+ *  and the final close, all on a single daily chart — generated only once the position closes
+ *  (see resyncPositionTrades), not on every scale-in/trim along the way. Same overwrite-in-place
+ *  approach as generateTradeChart: re-closing (e.g. after editing an old event) replaces the
+ *  same file rather than accumulating copies. */
+async function generatePositionChart(pos) {
+  if (!currentUser || !pos.symbol || !pos.events.length) return;
+  try {
+    const today = ymd(new Date());
+    const startDate = ymd(new Date(parseYmd(pos.openDate).getTime() - CHART_LOOKBACK_DAYS * 86400000));
+    const endDate = pos.closedDate || today;
+    const result = await fetchYahooChart(pos.symbol, yahooRangeFor(daysBetween(startDate, today)));
+    const bars = barsFromYahooChart(result).filter(b => b.date >= startDate && b.date <= endDate);
+
+    const events = sortedEvents(pos).filter(e => e.price != null && (e.type === 'entry' || e.type === 'add' || e.type === 'trim'));
+    const lastTrim = events.filter(e => e.type === 'trim').slice(-1)[0];
+    const markers = events.map(e => {
+      if (e.type === 'entry') return { date: e.date, price: e.price, label: 'ENTRY', color: ChartRender.COLORS.entry, dir: 'up' };
+      if (e.type === 'add') return { date: e.date, price: e.price, label: 'ADD', color: ChartRender.COLORS.add, dir: 'up' };
+      const isClose = e === lastTrim;
+      return { date: e.date, price: e.price, label: isClose ? 'CLOSE' : 'TRIM', color: isClose ? ChartRender.COLORS.close : ChartRender.COLORS.trim, dir: 'down' };
+    });
+
+    const canvas = ChartRender.renderChart(bars, { symbol: pos.symbol, markers });
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Canvas produced no image data');
+
+    const path = `${currentUser.id}/position-${pos.id}.png`;
+    const { error } = await sb.storage.from('trade-charts').upload(path, blob, {
+      contentType: 'image/png', upsert: true,
+    });
+    if (error) throw error;
+
+    if (pos.chartPath !== path) { pos.chartPath = path; savePositions(); }
+    if (viewingPositionId === pos.id) showPositionChart(pos.id);
+  } catch (err) {
+    console.error(`Position chart generation failed for ${pos.symbol}:`, err.message || err);
+    if (viewingPositionId === pos.id) {
+      $('#pdChartWrap').hidden = false;
+      $('#pdChartBody').innerHTML = `<span class="muted">Chart failed to load — ${esc(err.message || 'unknown error')}</span>`;
+    }
+  }
+}
+
+/** Shows the lifecycle chart for position `id` in the open position-detail dialog. */
+async function showPositionChart(id) {
+  const pos = positions.find(p => p.id === id);
+  const wrap = $('#pdChartWrap'), body = $('#pdChartBody');
+  if (!pos || !pos.chartPath) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  body.innerHTML = `<span class="muted">Loading…</span>`;
+  const url = await getTradeChartUrl(pos.chartPath);
+  if (viewingPositionId !== id) return;
+  body.innerHTML = url ? `<img src="${esc(url)}" alt="Lifecycle chart for ${esc(pos.symbol)}">`
+    : `<span class="muted">Chart unavailable right now.</span>`;
+}
+
 /* ---- trades check: flag open trades/positions against a fixed rule set ---- */
 const TC_LOSS_CAP_PCT = -10;               // rule 1: unrealized loss must stay above this
 const TC_EARLY_LOSS_PCT = -2;              // rule 2: loss threshold within the early window
@@ -1252,6 +1314,8 @@ function renderPositionDetail() {
   if (!pos) { posDetailDlg.close(); return; }
   const d = withPositionDerived(pos);
 
+  showPositionChart(pos.id);
+
   $('#pdSymSide').innerHTML = `${esc(pos.symbol)}
     <span class="pill ${pos.side}">${pos.side}</span>
     ${d.lastStatus ? `<span class="pill ${statusPillClass(d.lastStatus)}">${statusLabel(d.lastStatus)}</span>` : ''}
@@ -1370,6 +1434,12 @@ $('#pdDeleteBtn').addEventListener('click', () => {
 });
 $('#pdCloseBtn').addEventListener('click', () => posDetailDlg.close());
 $('#pdDlgClose').addEventListener('click', () => posDetailDlg.close());
+$('#pdRegenChartBtn').addEventListener('click', () => {
+  const pos = positions.find(p => p.id === viewingPositionId);
+  if (!pos) return;
+  $('#pdChartBody').innerHTML = `<span class="muted">Regenerating…</span>`;
+  generatePositionChart(pos);
+});
 
 /* ---- quick group detail (loose trades rolled into one card per symbol) ---- */
 const quickGroupDlg = $('#quickGroupDialog');

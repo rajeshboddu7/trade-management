@@ -182,6 +182,31 @@ group('chart-render: renderTradeChart');
   eq(window.ChartRender.nearestBarIndex(bars, '2026-01-10'), 2, 'nearestBarIndex falls back to the last bar on or before a date with no exact bar (e.g. a weekend exit)');
 })();
 
+group('chart-render: renderChart (multi-marker, for position lifecycle charts)');
+(function () {
+  const bars = [
+    { date: '2026-01-05', open: 100, high: 102, low: 99, close: 101 },
+    { date: '2026-01-06', open: 101, high: 103, low: 100, close: 102 },
+    { date: '2026-01-07', open: 102, high: 105, low: 101, close: 104 },
+    { date: '2026-01-08', open: 104, high: 106, low: 103, close: 105 },
+  ];
+  const markers = [
+    { date: '2026-01-05', price: 100, label: 'ENTRY', color: window.ChartRender.COLORS.entry, dir: 'up' },
+    { date: '2026-01-06', price: 102, label: 'ADD', color: window.ChartRender.COLORS.add, dir: 'up' },
+    { date: '2026-01-07', price: 104, label: 'TRIM', color: window.ChartRender.COLORS.trim, dir: 'down' },
+    { date: '2026-01-08', price: 105, label: 'CLOSE', color: window.ChartRender.COLORS.close, dir: 'down' },
+  ];
+  const canvas = window.ChartRender.renderChart(bars, { symbol: 'AAPL', markers });
+  eq(canvas.width, 900, 'renderChart handles a full entry/add/trim/close lifecycle without throwing');
+  ok(canvas.toDataURL('image/png').startsWith('data:image/png'), 'renderChart output exports as a PNG data URL');
+
+  const noMarkers = window.ChartRender.renderChart(bars, { symbol: 'AAPL', markers: [] });
+  ok(noMarkers.width === 900, 'renderChart handles zero markers without throwing');
+
+  const noArgs = window.ChartRender.renderChart(bars);
+  ok(noArgs.width === 900, 'renderChart tolerates a missing options object (defaults markers to [])');
+})();
+
 /* ---- render ---- */
 const byGroup = new Map();
 for (const r of results) {
