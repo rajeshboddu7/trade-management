@@ -1020,7 +1020,11 @@ function renderStats() {
   const avgR = rs.length ? rs.reduce((s, r) => s + r, 0) / rs.length : null;
 
   const best = chrono.length ? chrono.reduce((a, b) => b.pnl > a.pnl ? b : a) : null;
-  const worst = chrono.length ? chrono.reduce((a, b) => b.pnl < a.pnl ? b : a) : null;
+  // Excludes the trade already picked as best — with only one closed trade (or a tie for best),
+  // reducing over the full list would pick that same trade again and "Worst" would just repeat
+  // "Best" verbatim, which reads as a bug even though the number is technically correct.
+  const worstPool = best ? chrono.filter(t => t.id !== best.id) : [];
+  const worst = worstPool.length ? worstPool.reduce((a, b) => b.pnl < a.pnl ? b : a) : null;
 
   const cards = [
     ['Net P/L', `<span class="${cls(total)}">${fmtMoney(total, { sign: true })}</span>`, `${closedList.length} closed${openCount ? `, ${openCount} open` : ''}`],
@@ -1034,7 +1038,8 @@ function renderStats() {
       `${rs.length} trades with a stop`],
     ['Best day streak', `${bestW} day${bestW === 1 ? '' : 's'}`, `worst run ${bestL} day${bestL === 1 ? '' : 's'}`],
     ['Best trade', best ? `<span class="pos">${fmtMoney(best.pnl, { sign: true })}</span>` : '—', best ? `${esc(best.symbol)} · ${best.date}` : ''],
-    ['Worst trade', worst ? `<span class="neg">${fmtMoney(worst.pnl, { sign: true })}</span>` : '—', worst ? `${esc(worst.symbol)} · ${worst.date}` : ''],
+    ['Worst trade', worst ? `<span class="${cls(worst.pnl)}">${fmtMoney(worst.pnl, { sign: true })}</span>` : '—',
+      worst ? `${esc(worst.symbol)} · ${worst.date}` : (chrono.length ? 'only one closed trade so far' : '')],
     ['Days traded', String(dayEntries.length), `${fmtMoney(total / (dayEntries.length || 1), { sign: true })} / day`],
   ];
   grid.innerHTML = cards.map(([l, v, s]) =>
