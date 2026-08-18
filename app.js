@@ -17,6 +17,8 @@ const KEY_TRADES    = 'tm.trades.v1';
 const KEY_PREFS     = 'tm.prefs.v1';
 const KEY_POSITIONS = 'tm.positions.v1';
 const KEY_SCANNER   = 'tm.scanner.v1';
+const KEY_DELETED_TRADES    = 'tm.deletedTradeIds.v1';
+const KEY_DELETED_POSITIONS = 'tm.deletedPositionIds.v1';
 
 /* ============================ cloud sync (Supabase) ============================ */
 
@@ -44,11 +46,22 @@ async function pullCloudState() {
 
   const cloudTrades = Array.isArray(map.trades) ? map.trades : [];
   const cloudPositions = Array.isArray(map.positions) ? map.positions : [];
+  const cloudDeletedTrades = Array.isArray(map.deletedTradeIds) ? map.deletedTradeIds : [];
+  const cloudDeletedPositions = Array.isArray(map.deletedPositionIds) ? map.deletedPositionIds : [];
 
-  const mergedTrades = mergeById(trades, cloudTrades).map(migratePositionId);
-  const mergedPositions = mergeById(positions, cloudPositions);
-  const tradesGrew = mergedTrades.length > cloudTrades.length;
-  const positionsGrew = mergedPositions.length > cloudPositions.length;
+  // Tombstones only ever grow (a plain set union) — merge these first so the delete lists used
+  // just below already reflect anything deleted on either side.
+  const mergedDeletedTrades = Array.from(new Set([...deletedTradeIds, ...cloudDeletedTrades]));
+  const mergedDeletedPositions = Array.from(new Set([...deletedPositionIds, ...cloudDeletedPositions]));
+  const deletedTradesGrew = mergedDeletedTrades.length > cloudDeletedTrades.length;
+  const deletedPositionsGrew = mergedDeletedPositions.length > cloudDeletedPositions.length;
+  deletedTradeIds = mergedDeletedTrades;
+  deletedPositionIds = mergedDeletedPositions;
+
+  const mergedTrades = mergeById(trades, cloudTrades, deletedTradeIds).map(migratePositionId);
+  const mergedPositions = mergeById(positions, cloudPositions, deletedPositionIds);
+  const tradesGrew = mergedTrades.length > cloudTrades.filter(t => !deletedTradeIds.includes(t.id)).length;
+  const positionsGrew = mergedPositions.length > cloudPositions.filter(p => !deletedPositionIds.includes(p.id)).length;
 
   trades = mergedTrades;
   positions = mergedPositions;
@@ -60,11 +73,15 @@ async function pullCloudState() {
   localStorage.setItem(KEY_TRADES, JSON.stringify(trades));
   localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
   localStorage.setItem(KEY_PREFS, JSON.stringify(prefs));
+  localStorage.setItem(KEY_DELETED_TRADES, JSON.stringify(deletedTradeIds));
+  localStorage.setItem(KEY_DELETED_POSITIONS, JSON.stringify(deletedPositionIds));
   if (scannerData) localStorage.setItem(KEY_SCANNER, JSON.stringify(scannerData));
 
   // Push anything this browser had that the cloud didn't, so the cloud catches up too.
   if (tradesGrew) await syncToCloud('trades', trades);
   if (positionsGrew) await syncToCloud('positions', positions);
+  if (deletedTradesGrew) await syncToCloud('deletedTradeIds', deletedTradeIds);
+  if (deletedPositionsGrew) await syncToCloud('deletedPositionIds', deletedPositionIds);
   if (tradesGrew || positionsGrew) toast('Synced — merged local and cloud data, nothing dropped.');
 }
 
@@ -74,6 +91,10 @@ let trades = load(KEY_TRADES, []).map(migratePositionId);
 let prefs  = Object.assign({ theme: 'dark' }, load(KEY_PREFS, {}));
 let positions = load(KEY_POSITIONS, []);
 let scannerData = load(KEY_SCANNER, null);
+// Tombstones: ids the user actually chose to delete, so a stale cached copy on another device
+// (or another tab) can't bring a deleted trade/position back to life on its next sync.
+let deletedTradeIds = load(KEY_DELETED_TRADES, []);
+let deletedPositionIds = load(KEY_DELETED_POSITIONS, []);
 
 let cursor = startOfMonth(new Date());   // month shown in the calendar
 let selectedDate = null;                 // 'YYYY-MM-DD'
@@ -97,6 +118,26 @@ function savePrefs() {
 function savePositions() {
   localStorage.setItem(KEY_POSITIONS, JSON.stringify(positions));
   syncToCloud('positions', positions);
+}
+function saveDeletedTradeIds() {
+  localStorage.setItem(KEY_DELETED_TRADES, JSON.stringify(deletedTradeIds));
+  syncToCloud('deletedTradeIds', deletedTradeIds);
+}
+function saveDeletedPositionIds() {
+  localStorage.setItem(KEY_DELETED_POSITIONS, JSON.stringify(deletedPositionIds));
+  syncToCloud('deletedPositionIds', deletedPositionIds);
+}
+/** Call at every trade-deletion site so the delete sticks across devices instead of a stale
+ *  cached copy elsewhere resurrecting it on its next sync (see mergeById's deletedIds param). */
+function recordDeletedTradeIds(ids) {
+  let changed = false;
+  for (const id of (Array.isArray(ids) ? ids : [ids])) {
+    if (id != null && !deletedTradeIds.includes(id)) { deletedTradeIds.push(id); changed = true; }
+  }
+  if (changed) saveDeletedTradeIds();
+}
+function recordDeletedPositionId(id) {
+  if (id != null && !deletedPositionIds.includes(id)) { deletedPositionIds.push(id); saveDeletedPositionIds(); }
 }
 
 /* ============================ helpers ============================ */
@@ -182,7 +223,9 @@ function resyncPositionTrades(pos) {
     }
   }
 
+  const droppedIds = trades.filter(t => t.positionId === pos.id && !keepIds.has(t.id)).map(t => t.id);
   trades = trades.filter(t => t.positionId !== pos.id || keepIds.has(t.id));
+  if (droppedIds.length) recordDeletedTradeIds(droppedIds);
 
   pos.status = qty <= 0 && sortedEvents(pos).some(e => e.type === 'trim') ? 'closed' : 'open';
   pos.closedDate = pos.status === 'closed' ? sortedEvents(pos).slice(-1)[0].date : null;
@@ -1281,6 +1324,7 @@ $('#deleteBtn').addEventListener('click', () => {
   const id = $('#tradeForm').elements.id.value;
   if (!id || !confirm('Delete this trade? This cannot be undone.')) return;
   trades = trades.filter(t => t.id !== id);
+  recordDeletedTradeIds(id);
   saveTrades();
   closeDialog();
   renderAll();
@@ -1444,8 +1488,11 @@ $('#pdDeleteBtn').addEventListener('click', () => {
   const pos = positions.find(p => p.id === viewingPositionId);
   if (!pos) return;
   if (!confirm('Delete this position? This also removes any closed trades it generated. This cannot be undone.')) return;
+  const droppedTradeIds = trades.filter(t => t.positionId === pos.id).map(t => t.id);
   trades = trades.filter(t => t.positionId !== pos.id);
   positions = positions.filter(p => p.id !== pos.id);
+  recordDeletedTradeIds(droppedTradeIds);
+  recordDeletedPositionId(pos.id);
   saveTrades();
   savePositions();
   posDetailDlg.close();
@@ -1581,6 +1628,7 @@ $('#tradeBody').addEventListener('click', e => {
     e.stopPropagation();
     if (!confirm('Delete this trade?')) return;
     trades = trades.filter(t => t.id !== del.dataset.del);
+    recordDeletedTradeIds(del.dataset.del);
     saveTrades(); renderAll(); toast('Trade deleted');
     return;
   }
@@ -1716,6 +1764,8 @@ $('#importFile').addEventListener('change', e => {
 function wipe() {
   if (!confirm('Erase ALL trades and positions from this browser? Export a backup first if you want to keep them.')) return;
   if (!confirm('Really erase everything? This cannot be undone.')) return;
+  recordDeletedTradeIds(trades.map(t => t.id));
+  positions.forEach(p => recordDeletedPositionId(p.id));
   trades = [];
   positions = [];
   saveTrades(); savePositions(); renderAll();

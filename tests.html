@@ -156,6 +156,27 @@ group('sync: mergeById (the data-loss-bug fix)');
   eq(T.mergeById(null, [{ id: 'a', v: 1 }]), [{ id: 'a', v: 1 }], 'mergeById tolerates null/undefined local');
 })();
 
+group('sync: mergeById tombstones (deleted trade resurrecting from a stale device)');
+(function () {
+  // The actual bug: device A deletes trade "b" (cloud no longer has it), but device B still
+  // has its old, stale local copy of "b" and hasn't synced since. Without a tombstone, device
+  // B's next sync would union its stale "b" back into the merged result and re-push it to
+  // cloud -- the delete "undoes itself." With "b" recorded as deleted, it must stay gone.
+  const staleLocal = [{ id: 'a', v: 1 }, { id: 'b', v: 1 }];
+  const freshCloud = [{ id: 'a', v: 1 }]; // "b" already deleted elsewhere
+  const deleted = ['b'];
+  const merged = T.mergeById(staleLocal, freshCloud, deleted);
+  eq(merged.map(x => x.id).sort(), ['a'], 'a deleted id is excluded even though a stale local copy still has it');
+
+  eq(T.mergeById(staleLocal, freshCloud), [{ id: 'a', v: 1 }, { id: 'b', v: 1 }],
+    'without a deletedIds argument, the deleted trade resurrects (documents why this fix was needed)');
+
+  eq(T.mergeById(staleLocal, freshCloud, new Set(['b'])).map(x => x.id).sort(), ['a'],
+    'deletedIds also accepts a Set, not just an array');
+
+  eq(T.mergeById([{ id: 'a', v: 1 }], [], ['a']), [], 'deleting the only record present leaves an empty array');
+})();
+
 /* ---- chart rendering ---- */
 group('chart-render: renderTradeChart');
 (function () {

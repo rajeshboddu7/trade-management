@@ -172,11 +172,18 @@ function migratePositionId(t) {
 
 /** Union-merge two arrays of {id,...} records by id — never drops a record either side has.
  *  This is the whole fix for the data-loss bug: no sync path should ever be able to silently
- *  delete data just because one side happened to be empty or stale. Cloud wins on id conflicts. */
-function mergeById(local, cloud) {
+ *  delete data just because one side happened to be empty or stale. Cloud wins on id conflicts.
+ *
+ *  `deletedIds` (optional Set/array of ids) is the tombstone list: an id the user actually
+ *  chose to delete is excluded even if a stale local or cloud copy still has it. Without this,
+ *  an intentional delete could "resurrect" the next time this device (or another one with an
+ *  older cached copy) syncs, since a plain union merge has no way to distinguish "never existed
+ *  here" from "existed and was removed on purpose." */
+function mergeById(local, cloud, deletedIds) {
   const map = new Map();
   (local || []).forEach(item => { if (item && item.id != null) map.set(item.id, item); });
   (cloud || []).forEach(item => { if (item && item.id != null) map.set(item.id, item); });
+  if (deletedIds) for (const id of deletedIds) map.delete(id);
   return Array.from(map.values());
 }
 
