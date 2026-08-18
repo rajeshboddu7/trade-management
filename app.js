@@ -550,13 +550,23 @@ function quickGroupUnrealizedRow(g) {
 }
 
 /** Flags whether the live price has breached the stop, side-aware: a long is breached at or
- *  below its stop; a short (whose stop sits above entry) is breached at or above its stop. */
+ *  below its stop; a short (whose stop sits above entry) is breached at or above its stop.
+ *  Falls back to the standard 5% default when the trade has no stop explicitly saved — trades
+ *  opened before the default existed, or saved without ever touching the Stop loss field, still
+ *  get flagged against the same 5% rule everything else uses, not silently skipped. */
 function stopFlagDot(t, price) {
-  if (t.pnl != null || t.stop == null || t.stop === '' || !isFinite(t.stop)) return '';
-  const breached = t.side === 'short' ? price >= t.stop : price <= t.stop;
+  if (t.pnl != null) return '';
+  let stop = t.stop, isDefault = false;
+  if (stop == null || stop === '' || !isFinite(stop)) {
+    stop = computeDefaultStop(t.entry, t.side);
+    isDefault = true;
+    if (stop == null) return '';
+  }
+  const breached = t.side === 'short' ? price >= stop : price <= stop;
+  const label = isDefault ? `default 5% stop (${fmtNum(stop)})` : `stop (${fmtNum(stop)})`;
   const title = breached
-    ? `Stop breached — price is ${t.side === 'short' ? 'at/above' : 'at/below'} stop (${fmtNum(t.stop)})`
-    : `Price is ${t.side === 'short' ? 'below' : 'above'} stop loss (${fmtNum(t.stop)})`;
+    ? `Stop breached — price is ${t.side === 'short' ? 'at/above' : 'at/below'} ${label}`
+    : `Price is ${t.side === 'short' ? 'below' : 'above'} ${label}`;
   return ` <span class="stop-flag ${breached ? 'stop-breach' : 'stop-safe'}" title="${esc(title)}"></span>`;
 }
 
