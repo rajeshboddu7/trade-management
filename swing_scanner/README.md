@@ -99,32 +99,45 @@ patterns matched, RS percentile, sector/theme leadership, earnings flag,
 sector/industry, last close) to Supabase, and the "Scanner" tab on the site
 shows it after you sign in.
 
-## 5. Schedule it to run automatically Tue/Fri after close
+## 5. Scheduled to run automatically Tue/Fri after close
 
-This script can't run itself in the background — it needs your machine (or
-a small cloud VM) to actually execute it on a schedule. Two common options:
+Already set up via Windows Task Scheduler — `run_scanner.bat` fires every
+**Tuesday and Friday at 4:30 PM** (30 min after the 4pm ET close, so Yahoo's
+EOD data has settled), no need to remember to run it by hand.
 
-### Mac/Linux — cron
+Check its status any time:
+```powershell
+schtasks /query /tn "TradeManagement Swing Scanner" /v /fo list
+```
 
-Edit your crontab:
+Change the time/days:
+```powershell
+schtasks /change /tn "TradeManagement Swing Scanner" /st 17:00
+```
+
+Turn it off (e.g. before a vacation) / back on:
+```powershell
+schtasks /change /tn "TradeManagement Swing Scanner" /disable
+schtasks /change /tn "TradeManagement Swing Scanner" /enable
+```
+
+**Caveat:** it was created without a stored Windows password, so it only
+fires while you're logged into Windows at 4:30 PM — it won't run against a
+locked screen saver or signed-out session, but a locked (screen-locked, still
+logged-in) session is fine. If you want it to run even when signed out
+entirely, re-create it with `/RU <username> /RP <password>` (Task Scheduler
+will prompt for the Windows account password, not the Supabase one) — that
+wasn't set up automatically since it means storing your Windows login
+credential in Task Scheduler's credential vault.
+
+**On a Mac/Linux machine instead**, use cron:
 ```bash
 crontab -e
 ```
-Add (adjust paths; market close is 4pm ET — give it a 30 min buffer so
-Yahoo's EOD data is settled):
 ```
 30 16 * * 2,5 cd /path/to/scanner && /usr/bin/python3 scanner.py --universe my_universe.csv >> reports/log.txt 2>&1
 ```
 `2,5` = Tuesday and Friday. Adjust the hour if your machine isn't on ET.
-
-### Windows — Task Scheduler
-
-1. Open Task Scheduler → Create Task
-2. Trigger: Weekly, on Tuesday and Friday, at 4:30 PM (your local time
-   equivalent to market close)
-3. Action: Start a program →
-   `python.exe` with arguments `scanner.py --universe my_universe.csv`,
-   "Start in" set to the scanner folder
 
 ## Files
 
