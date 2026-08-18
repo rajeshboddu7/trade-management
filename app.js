@@ -3,6 +3,16 @@
 (() => {
 'use strict';
 
+/** Pure calculation core lives in trade-math.js (loaded before this script) so it can be
+ *  unit-tested standalone in tests.html without dragging in the DOM/state/cloud-sync code below. */
+const {
+  CURRENCY, ymd, parseYmd, daysBetween, tradingDaysBetween,
+  fmtMoney, fmtNum, cls,
+  isOpenTrade, pnlOf, rOf, daysInTrade, computeDefaultStop, calcUnrealized,
+  sortedEvents, derivePosition, isPositionTrade, trimToTrade, migratePositionId,
+  mergeById,
+} = window.TradeMath;
+
 const KEY_TRADES    = 'tm.trades.v1';
 const KEY_PREFS     = 'tm.prefs.v1';
 const KEY_POSITIONS = 'tm.positions.v1';
@@ -23,18 +33,9 @@ async function syncToCloud(key, value) {
   if (error) console.error(`Cloud sync failed for "${key}":`, error.message);
 }
 
-/** Pull all cloud state for the signed-in user and overwrite the local cache with it —
- *  cloud is the source of truth once signed in, so this is what makes cross-device work. */
-/** Union-merge two arrays of {id,...} records by id — never drops a record either
- *  side has. This is the whole fix: no sync path should ever be able to silently
- *  delete data just because one side happened to be empty or stale. */
-function mergeById(local, cloud) {
-  const map = new Map();
-  (local || []).forEach(item => { if (item && item.id != null) map.set(item.id, item); });
-  (cloud || []).forEach(item => { if (item && item.id != null) map.set(item.id, item); }); // cloud wins on id conflicts
-  return Array.from(map.values());
-}
-
+/** Pull all cloud state for the signed-in user and merge it into the local cache (mergeById,
+ *  from trade-math.js) — cloud is never allowed to blow away local-only records, which is what
+ *  makes cross-device sync safe. */
 async function pullCloudState() {
   const { data, error } = await sb.from('app_state').select('key,data').eq('user_id', currentUser.id);
   if (error) { toast('Could not load cloud data: ' + error.message); return; }
@@ -44,7 +45,7 @@ async function pullCloudState() {
   const cloudTrades = Array.isArray(map.trades) ? map.trades : [];
   const cloudPositions = Array.isArray(map.positions) ? map.positions : [];
 
-  const mergedTrades = mergeById(trades, cloudTrades);
+  const mergedTrades = mergeById(trades, cloudTrades).map(migratePositionId);
   const mergedPositions = mergeById(positions, cloudPositions);
   const tradesGrew = mergedTrades.length > cloudTrades.length;
   const positionsGrew = mergedPositions.length > cloudPositions.length;
@@ -69,9 +70,8 @@ async function pullCloudState() {
 
 /* ============================ state ============================ */
 
-let trades = load(KEY_TRADES, []);
+let trades = load(KEY_TRADES, []).map(migratePositionId);
 let prefs  = Object.assign({ theme: 'dark' }, load(KEY_PREFS, {}));
-const CURRENCY = '$';
 let positions = load(KEY_POSITIONS, []);
 let scannerData = load(KEY_SCANNER, null);
 
@@ -109,31 +109,12 @@ const MONTHS = ['January','February','March','April','May','June',
 const WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
-function ymd(d) {
-  const p = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-/** Parse 'YYYY-MM-DD' as a *local* date (avoids the UTC shift of new Date(str)). */
-function parseYmd(s) {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-function fmtMoney(n, { sign = false } = {}) {
-  const abs = Math.abs(n);
-  const s = abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const lead = n < 0 ? '-' : (sign && n > 0 ? '+' : '');
-  return `${lead}${CURRENCY}${s}`;
-}
 function fmtCompact(n) {
   const abs = Math.abs(n);
   const unit = abs >= 1e7 ? [1e7, 'Cr'] : abs >= 1e5 ? [1e5, 'L'] : abs >= 1e3 ? [1e3, 'k'] : [1, ''];
   const v = (n / unit[0]).toFixed(abs >= 1e3 ? 1 : 0);
   return (n > 0 ? '+' : '') + v + unit[1];
 }
-function fmtNum(n, dp = 2) {
-  return Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: dp });
-}
-function cls(n) { return n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero'; }
 function tone(n) { return n > 0 ? 'win' : n < 0 ? 'loss' : 'flat'; }
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c =>
@@ -156,38 +137,13 @@ function toast(msg) {
   toastTimer = setTimeout(() => { el.hidden = true; }, 2200);
 }
 
-/* ============================ trade math ============================ */
-
-/** True if a trade has no exit price yet — still an open/holding position. */
-function isOpenTrade(t) { return t.exit == null || t.exit === ''; }
-
-/** Net P/L: direction-aware, fees subtracted. null if the trade is still open (no exit price). */
-function pnlOf(t) {
-  if (isOpenTrade(t)) return null;
-  const gross = (t.side === 'short' ? (t.entry - t.exit) : (t.exit - t.entry)) * t.qty;
-  return gross - (t.fees || 0);
-}
-/** R-multiple: net P/L divided by the risk implied by the stop. null if no usable stop, or still open. */
-function rOf(t) {
-  const pnl = pnlOf(t);
-  if (pnl == null) return null;
-  if (t.stop == null || t.stop === '' || !isFinite(t.stop)) return null;
-  const risk = Math.abs(t.entry - t.stop) * t.qty;
-  if (risk <= 0) return null;
-  return pnl / risk;
-}
-/** Trading days held (weekends excluded — market's closed, so they shouldn't count): entry date
- *  (t.entryDate if set, else t.date) to exit date (t.exitDate, or today if still open).
- *  null when the trade is closed but has no recorded exit date (e.g. legacy data from before this field existed). */
-function daysInTrade(t) {
-  const entry = t.entryDate || t.date;
-  if (isOpenTrade(t)) return tradingDaysBetween(entry, ymd(new Date()));
-  if (!t.exitDate) return null;
-  return tradingDaysBetween(entry, t.exitDate);
-}
+/* ============================ trade/position math glue ============================ */
+/* The actual math (pnlOf, rOf, derivePosition, mergeById, etc.) lives in trade-math.js and is
+ * destructured in at the top of this file. What's left here is state-aware glue that needs
+ * `trades`/`positions`/`uid`, which trade-math.js deliberately has no access to. */
 
 function withDerived(t) {
-  return Object.assign({}, t, { pnl: pnlOf(t), rmultiple: rOf(t), days: daysInTrade(t) });
+  return Object.assign({}, t, { pnl: pnlOf(t), rmultiple: rOf(t), days: daysInTrade(t, ymd(new Date())) });
 }
 
 /** Group trades by date -> { pnl, count, trades }. */
@@ -204,69 +160,7 @@ function byDate(list = trades) {
   return map;
 }
 
-/* ============================ position math ============================ */
-
-/** A position's events, chronologically (stable sort keeps same-day insertion order). */
-function sortedEvents(p) {
-  return p.events.slice().sort((a, b) => a.date === b.date ? 0 : a.date.localeCompare(b.date));
-}
-
-/** Replay a position's event log into avg cost, remaining qty, realized/unrealized P/L. */
-function derivePosition(p) {
-  let qty = 0, avgCost = 0, realized = 0;
-  let lastPrice = null, lastStatus = null, lastNote = '', lastEventDate = p.openDate;
-
-  for (const e of sortedEvents(p)) {
-    if (e.type === 'entry' || e.type === 'add') {
-      avgCost = qty === 0 ? e.price : (avgCost * qty + e.price * e.qty) / (qty + e.qty);
-      qty += e.qty;
-    } else if (e.type === 'trim') {
-      const closeQty = Math.min(e.qty, qty);
-      const gross = (p.side === 'short' ? (avgCost - e.price) : (e.price - avgCost)) * closeQty;
-      realized += gross - (e.fees || 0);
-      qty -= closeQty;
-    }
-    if (e.price != null) { lastPrice = e.price; lastEventDate = e.date; }
-    if (e.type === 'checkin') { lastStatus = e.status; lastNote = e.note; }
-  }
-
-  const unrealized = (lastPrice == null || qty === 0) ? 0 :
-    (p.side === 'short' ? (avgCost - lastPrice) : (lastPrice - avgCost)) * qty;
-  const entryEvent = sortedEvents(p).find(e => e.type === 'entry');
-  const entryPrice = entryEvent ? entryEvent.price : avgCost;
-  const pctMove = lastPrice == null ? 0 :
-    ((p.side === 'short' ? (entryPrice - lastPrice) : (lastPrice - entryPrice)) / entryPrice) * 100;
-
-  return {
-    remainingQty: qty, avgCost, realizedPnl: realized, unrealizedPnl: unrealized,
-    totalPnl: realized + unrealized, lastPrice, lastStatus, lastNote, lastEventDate,
-    entryPrice, pctMove,
-  };
-}
 function withPositionDerived(p) { return Object.assign({}, p, derivePosition(p)); }
-
-/** True if a closed trade row was auto-generated from a position trim. */
-function isPositionTrade(t) { return /(^|,)position:/.test(t.tags || ''); }
-
-function trimToTrade(pos, event, avgCostBefore) {
-  const entryEvent = sortedEvents(pos).find(e => e.type === 'entry');
-  return {
-    id: event.tradeId || uid(),
-    date: event.date,
-    entryDate: entryEvent ? entryEvent.date : pos.openDate,
-    exitDate: event.date,
-    symbol: pos.symbol,
-    side: pos.side,
-    qty: event.qty,
-    entry: avgCostBefore,
-    exit: event.price,
-    fees: event.fees || 0,
-    stop: null,
-    platform: pos.platform || '',
-    tags: [pos.tags, `position:${pos.id}`].filter(Boolean).join(','),
-    notes: `From position ${pos.symbol}${event.note ? ' — ' + event.note : ''}`,
-  };
-}
 
 /** Replay a position's events, syncing every trim to a trade row (idempotent via event.tradeId),
  *  dropping trade rows for trims that were edited/deleted away, and updating open/closed status. */
@@ -279,7 +173,7 @@ function resyncPositionTrades(pos) {
       avgCost = qty === 0 ? e.price : (avgCost * qty + e.price * e.qty) / (qty + e.qty);
       qty += e.qty;
     } else if (e.type === 'trim') {
-      const trade = trimToTrade(pos, e, avgCost);
+      const trade = trimToTrade(pos, e, avgCost, uid);
       e.tradeId = trade.id;
       keepIds.add(trade.id);
       const i = trades.findIndex(t => t.id === trade.id);
@@ -288,7 +182,7 @@ function resyncPositionTrades(pos) {
     }
   }
 
-  trades = trades.filter(t => !isPositionTrade(t) || !(t.tags || '').includes(`position:${pos.id}`) || keepIds.has(t.id));
+  trades = trades.filter(t => t.positionId !== pos.id || keepIds.has(t.id));
 
   pos.status = qty <= 0 && sortedEvents(pos).some(e => e.type === 'trim') ? 'closed' : 'open';
   pos.closedDate = pos.status === 'closed' ? sortedEvents(pos).slice(-1)[0].date : null;
@@ -532,11 +426,6 @@ function ensureCurrentPrice(symbol) {
     else if (view === 'tradescheck') renderTradesCheck();
     if (quickGroupDlg.open && quickGroupOpenSymbol === symbol) openQuickGroup(quickGroupOpenSymbol, quickGroupOpenSide);
   });
-}
-
-function calcUnrealized(side, avgCost, qty, price) {
-  if (price == null || !qty) return null;
-  return (side === 'short' ? (avgCost - price) : (price - avgCost)) * qty;
 }
 
 function quickGroupUnrealizedRow(g) {
@@ -785,10 +674,6 @@ function renderPositions() {
     </tr>`).join('');
 }
 
-function daysBetween(a, b) {
-  return Math.round((parseYmd(b) - parseYmd(a)) / 86400000);
-}
-
 /** Fetch daily OHLC history for a symbol from Yahoo Finance's chart endpoint (no key needed).
  *  Yahoo doesn't reliably send CORS headers, so fall back to public CORS proxies on failure.
  *  corsproxy.io now rejects most free/anonymous traffic ("Server-side requests are not allowed
@@ -824,19 +709,6 @@ const TC_CAPITAL_CAP = 20000;              // rule 4: max capital per symbol+sid
 const TC_REGULAR_HOLD_DAYS = 21;           // rule 4: regular hold period, calendar days
 const TC_REGULAR_HOLD_TRADING_DAYS = 15;   // rule 4: regular hold period, trading days
 const TC_CAPITAL_REDUCE_TRADING_DAYS = 3;  // rule 4: grace period to bring capital back under cap
-
-function tradingDaysBetween(a, b) {
-  const d1 = parseYmd(a), d2 = parseYmd(b);
-  if (d2 < d1) return -tradingDaysBetween(b, a);
-  let count = 0;
-  const cur = new Date(d1);
-  while (cur < d2) {
-    cur.setDate(cur.getDate() + 1);
-    const day = cur.getDay();
-    if (day !== 0 && day !== 6) count++;
-  }
-  return count;
-}
 
 /** Evaluates the fixed rule set against current open trades/positions. Nothing here is stored —
  *  it's recomputed fresh each render from trades/positions plus whatever live quotes are cached. */
@@ -1134,14 +1006,6 @@ function drawMonths(list) {
 /* ============================ dialog ============================ */
 
 const dlg = $('#tradeDialog');
-const DEFAULT_STOP_PCT = 0.05;
-
-/** 5% below entry for longs, 5% above for shorts (a short's stop must sit above entry — that's
- *  the losing direction for a short — so a flat "subtract 5%" would be wrong on that side). */
-function computeDefaultStop(entry, side) {
-  if (!isFinite(entry) || entry <= 0) return null;
-  return side === 'short' ? entry * (1 + DEFAULT_STOP_PCT) : entry * (1 - DEFAULT_STOP_PCT);
-}
 
 /** Re-fills Stop loss with the default whenever entry/side changes, unless the user has typed
  *  into the Stop loss field themselves this dialog session (tracked via dataset.stopTouched). */
@@ -1221,7 +1085,9 @@ $('#tradeForm').addEventListener('submit', e => {
   const t = readForm();
   if (!t.date || !t.symbol || !t.notes) return;
   const i = trades.findIndex(x => x.id === t.id);
-  if (i >= 0) trades[i] = t; else trades.push(t);
+  // Editing a position-generated trade through this dialog has no field for positionId (it's
+  // not user-editable), so carry the existing link forward instead of letting the save drop it.
+  if (i >= 0) { t.positionId = trades[i].positionId ?? null; trades[i] = t; } else trades.push(t);
   saveTrades();
   selectedDate = t.date;
   cursor = startOfMonth(parseYmd(t.date));
@@ -1396,7 +1262,7 @@ $('#pdDeleteBtn').addEventListener('click', () => {
   const pos = positions.find(p => p.id === viewingPositionId);
   if (!pos) return;
   if (!confirm('Delete this position? This also removes any closed trades it generated. This cannot be undone.')) return;
-  trades = trades.filter(t => !t.tags || !t.tags.includes(`position:${pos.id}`));
+  trades = trades.filter(t => t.positionId !== pos.id);
   positions = positions.filter(p => p.id !== pos.id);
   saveTrades();
   savePositions();

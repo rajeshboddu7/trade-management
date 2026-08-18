@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trade Management — tests</title>
+<style>
+  body { font-family: ui-monospace, Consolas, monospace; background: #0b0e14; color: #d7dce3; padding: 24px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  #summary { font-size: 15px; margin: 4px 0 18px; }
+  #summary.pass { color: #34d399; }
+  #summary.fail { color: #f87171; }
+  .group { margin: 0 0 4px; font-weight: 700; color: #9ca8b8; margin-top: 14px; }
+  .row { padding: 2px 0 2px 14px; }
+  .ok { color: #34d399; }
+  .bad { color: #f87171; }
+  .detail { color: #f87171; margin-left: 14px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Trade Management — automated tests</h1>
+<div id="summary">Running…</div>
+<div id="out"></div>
+
+<script src="trade-math.js"></script>
+<script>
+const T = window.TradeMath;
+const results = [];
+let currentGroup = '';
+
+function group(name) { currentGroup = name; }
+function eq(actual, expected, label) {
+  const pass = JSON.stringify(actual) === JSON.stringify(expected);
+  results.push({ group: currentGroup, label, pass, actual, expected });
+}
+function close(actual, expected, label, eps = 1e-6) {
+  const pass = typeof actual === 'number' && Math.abs(actual - expected) < eps;
+  results.push({ group: currentGroup, label, pass, actual, expected });
+}
+function ok(cond, label) {
+  results.push({ group: currentGroup, label, pass: !!cond, actual: cond, expected: true });
+}
+
+/* ---- dates ---- */
+group('dates');
+eq(T.ymd(new Date(2026, 0, 5)), '2026-01-05', 'ymd pads month/day');
+eq(T.parseYmd('2026-03-01').getMonth(), 2, 'parseYmd is 0-indexed month');
+eq(T.daysBetween('2026-01-01', '2026-01-10'), 9, 'daysBetween calendar days');
+// Fri 2026-08-14 -> Mon 2026-08-17: 3 calendar days, but only Monday is a trading day.
+eq(T.tradingDaysBetween('2026-08-14', '2026-08-17'), 1, 'tradingDaysBetween skips a full weekend');
+eq(T.tradingDaysBetween('2026-08-17', '2026-08-19'), 2, 'tradingDaysBetween counts Tue+Wed after a Monday');
+eq(T.tradingDaysBetween('2026-08-17', '2026-08-17'), 0, 'tradingDaysBetween same day is 0');
+eq(T.tradingDaysBetween('2026-08-19', '2026-08-17'), -2, 'tradingDaysBetween is negative going backwards');
+
+/* ---- formatting ---- */
+group('formatting');
+eq(T.fmtMoney(1234.5), '$1,234.50', 'fmtMoney thousands + 2dp');
+eq(T.fmtMoney(-50), '-$50.00', 'fmtMoney negative sign');
+eq(T.fmtMoney(50, { sign: true }), '+$50.00', 'fmtMoney explicit plus sign');
+eq(T.fmtMoney(0, { sign: true }), '$0.00', 'fmtMoney no plus sign on zero');
+eq(T.cls(5), 'pos', 'cls positive');
+eq(T.cls(-5), 'neg', 'cls negative');
+eq(T.cls(0), 'zero', 'cls zero');
+
+/* ---- trade math ---- */
+group('trade math: pnlOf / rOf');
+ok(T.isOpenTrade({ exit: null }), 'isOpenTrade true when exit is null');
+ok(!T.isOpenTrade({ exit: 10 }), 'isOpenTrade false once exit is set');
+eq(T.pnlOf({ exit: null, entry: 10, qty: 5, side: 'long' }), null, 'pnlOf null while open');
+close(T.pnlOf({ side: 'long', entry: 10, exit: 15, qty: 5, fees: 0 }), 25, 'pnlOf long gain');
+close(T.pnlOf({ side: 'long', entry: 10, exit: 5, qty: 5, fees: 0 }), -25, 'pnlOf long loss');
+close(T.pnlOf({ side: 'short', entry: 10, exit: 5, qty: 5, fees: 0 }), 25, 'pnlOf short gain on price drop');
+close(T.pnlOf({ side: 'long', entry: 10, exit: 15, qty: 5, fees: 3 }), 22, 'pnlOf subtracts fees');
+close(T.rOf({ side: 'long', entry: 10, exit: 20, qty: 5, stop: 8, fees: 0 }), 5, 'rOf: 50 pnl / (|10-8|*5=10 risk) = 5R');
+eq(T.rOf({ side: 'long', entry: 10, exit: 15, qty: 1, stop: null, fees: 0 }), null, 'rOf null with no stop');
+eq(T.rOf({ side: 'long', entry: 10, exit: null, qty: 1, stop: 8, fees: 0 }), null, 'rOf null while open');
+
+group('trade math: default stop (5%, side-aware)');
+close(T.computeDefaultStop(100, 'long'), 95, 'default stop 5% below entry for longs');
+close(T.computeDefaultStop(100, 'short'), 105, 'default stop 5% above entry for shorts');
+eq(T.computeDefaultStop(0, 'long'), null, 'default stop null for non-positive entry');
+eq(T.computeDefaultStop(NaN, 'long'), null, 'default stop null for NaN entry');
+
+group('trade math: daysInTrade (trading days)');
+eq(T.daysInTrade({ exit: null, date: '2026-08-14' }, '2026-08-17'), 1, 'open trade: Fri entry to Mon today = 1 trading day');
+eq(T.daysInTrade({ exit: 10, exitDate: null, date: '2026-08-01' }, '2026-08-17'), null, 'closed trade with no exitDate is null (legacy data)');
+eq(T.daysInTrade({ exit: 10, exitDate: '2026-08-19', date: '2026-08-17' }, '2026-08-17'), 2, 'closed trade uses exitDate, not today');
+
+group('trade math: calcUnrealized');
+close(T.calcUnrealized('long', 100, 10, 110), 100, 'calcUnrealized long gain');
+close(T.calcUnrealized('short', 100, 10, 90), 100, 'calcUnrealized short gain on price drop');
+eq(T.calcUnrealized('long', 100, 0, 110), null, 'calcUnrealized null with zero qty');
+eq(T.calcUnrealized('long', 100, 10, null), null, 'calcUnrealized null with no price');
+
+/* ---- position math ---- */
+group('position math: derivePosition avg cost + P/L');
+(function () {
+  const pos = {
+    side: 'long', openDate: '2026-01-01',
+    events: [
+      { type: 'entry', date: '2026-01-01', price: 100, qty: 10 },
+      { type: 'add',   date: '2026-01-05', price: 120, qty: 10 },   // avg now (100*10+120*10)/20 = 110
+      { type: 'trim',  date: '2026-01-10', price: 130, qty: 5, fees: 1 }, // realized (130-110)*5-1 = 99
+    ],
+  };
+  const d = T.derivePosition(pos);
+  close(d.avgCost, 110, 'derivePosition blends avg cost across two adds');
+  close(d.realizedPnl, 99, 'derivePosition realized P/L on trim, fees subtracted');
+  eq(d.remainingQty, 15, 'derivePosition remaining qty after a partial trim');
+  close(d.unrealizedPnl, (130 - 110) * 15, 'derivePosition marks remainder at last trade price');
+})();
+
+group('position math: derivePosition short side');
+(function () {
+  const pos = {
+    side: 'short', openDate: '2026-01-01',
+    events: [
+      { type: 'entry', date: '2026-01-01', price: 100, qty: 10 },
+      { type: 'trim', date: '2026-01-05', price: 90, qty: 10, fees: 0 },
+    ],
+  };
+  const d = T.derivePosition(pos);
+  close(d.realizedPnl, 100, 'short position profits when price falls');
+  eq(d.remainingQty, 0, 'short position fully closed');
+})();
+
+group('position math: trimToTrade / isPositionTrade / migratePositionId');
+(function () {
+  const pos = { id: 'pos1', symbol: 'AAPL', side: 'long', platform: 'schwab', tags: '',
+    openDate: '2026-01-01', events: [{ type: 'entry', date: '2026-01-01', price: 100, qty: 10 }] };
+  const trade = T.trimToTrade(pos, { date: '2026-01-10', price: 120, qty: 5, fees: 0 }, 100, () => 'fixed-id');
+  eq(trade.positionId, 'pos1', 'trimToTrade sets positionId as a real reference, not a string tag');
+  ok(T.isPositionTrade(trade), 'isPositionTrade true for a trade with positionId set');
+  ok(!T.isPositionTrade({ positionId: null }), 'isPositionTrade false without one');
+
+  const legacy = { id: 't1', tags: 'position:pos1' };
+  const migrated = T.migratePositionId(legacy);
+  eq(migrated.positionId, 'pos1', 'migratePositionId recovers the id from the old tag encoding');
+  const alreadyHasIt = { id: 't2', positionId: 'pos2', tags: 'position:pos1' };
+  eq(T.migratePositionId(alreadyHasIt).positionId, 'pos2', 'migratePositionId never overwrites an existing positionId');
+  const untouched = { id: 't3', notes: 'hi' };
+  ok(T.migratePositionId(untouched) === untouched, 'migratePositionId returns the same object when nothing to migrate (no needless copy)');
+})();
+
+/* ---- cross-device sync ---- */
+group('sync: mergeById (the data-loss-bug fix)');
+(function () {
+  const local = [{ id: 'a', v: 1 }, { id: 'b', v: 1 }];
+  const cloud = [{ id: 'b', v: 2 }, { id: 'c', v: 1 }];
+  const merged = T.mergeById(local, cloud);
+  const ids = merged.map(x => x.id).sort();
+  eq(ids, ['a', 'b', 'c'], 'mergeById unions ids from both sides, drops nothing');
+  eq(merged.find(x => x.id === 'b').v, 2, 'mergeById: cloud value wins on id conflict');
+  eq(T.mergeById([], []), [], 'mergeById handles two empty arrays');
+  eq(T.mergeById([{ id: 'a', v: 1 }], []), [{ id: 'a', v: 1 }], 'mergeById: local survives an empty cloud (the original bug)');
+  eq(T.mergeById(null, [{ id: 'a', v: 1 }]), [{ id: 'a', v: 1 }], 'mergeById tolerates null/undefined local');
+})();
+
+/* ---- render ---- */
+const byGroup = new Map();
+for (const r of results) {
+  if (!byGroup.has(r.group)) byGroup.set(r.group, []);
+  byGroup.get(r.group).push(r);
+}
+const out = document.getElementById('out');
+let passCount = 0;
+for (const [g, rows] of byGroup) {
+  const h = document.createElement('div');
+  h.className = 'group';
+  h.textContent = g;
+  out.appendChild(h);
+  for (const r of rows) {
+    if (r.pass) passCount++;
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<span class="${r.pass ? 'ok' : 'bad'}">${r.pass ? '✓' : '✗'}</span> ${r.label}`;
+    out.appendChild(row);
+    if (!r.pass) {
+      const d = document.createElement('div');
+      d.className = 'detail';
+      d.textContent = `expected ${JSON.stringify(r.expected)}, got ${JSON.stringify(r.actual)}`;
+      out.appendChild(d);
+    }
+  }
+}
+const summary = document.getElementById('summary');
+const failCount = results.length - passCount;
+summary.textContent = failCount === 0
+  ? `All ${results.length} tests passed.`
+  : `${failCount} of ${results.length} tests FAILED.`;
+summary.className = failCount === 0 ? 'pass' : 'fail';
+</script>
+</body>
+</html>
