@@ -1034,16 +1034,47 @@ const SCAN_PATTERN_GROUPS = [
 ];
 
 function scanMatchRow(m) {
-  const industry = m.industry || m.sector || '—';
   return `
     <tr>
       <td><b>${esc(m.ticker)}</b></td>
-      <td class="${m.leading_theme ? 'leading-theme' : ''}" title="${m.leading_theme ? 'Leading theme — one of the strongest relative-strength industries this run' : ''}">${esc(industry)}</td>
       <td class="num">${m.last_close != null ? fmtMoney(m.last_close) : '—'}</td>
       <td class="num">${m.rs_percentile != null ? m.rs_percentile.toFixed(1) : '—'}</td>
       <td>${m.sector_leader ? '<span class="pill working">Leader</span>' : ''}</td>
       <td>${m.earnings_within_14d ? '<span class="pill watch">Soon</span>' : ''}</td>
     </tr>`;
+}
+
+/** Clusters a pattern's matches by industry so correlated setups (several names in the same
+ *  industry breaking out together) are visually obvious instead of buried in one flat list.
+ *  Groups sort leading-theme industries first, then by their best RS percentile, so the
+ *  strongest clusters land at the top; rows within a group sort by RS percentile too. */
+function groupByIndustry(rows) {
+  const map = new Map();
+  for (const m of rows) {
+    const key = m.industry || m.sector || '—';
+    let g = map.get(key);
+    if (!g) map.set(key, g = { industry: key, leadingTheme: false, rows: [] });
+    g.rows.push(m);
+    if (m.leading_theme) g.leadingTheme = true;
+  }
+  const groups = Array.from(map.values());
+  for (const g of groups) g.rows.sort((a, b) => (b.rs_percentile ?? -1) - (a.rs_percentile ?? -1));
+  groups.sort((a, b) => {
+    if (a.leadingTheme !== b.leadingTheme) return a.leadingTheme ? -1 : 1;
+    const bestA = Math.max(...a.rows.map(r => r.rs_percentile ?? -1));
+    const bestB = Math.max(...b.rows.map(r => r.rs_percentile ?? -1));
+    if (bestA !== bestB) return bestB - bestA;
+    return a.industry.localeCompare(b.industry);
+  });
+  return groups;
+}
+
+function renderScanGroups(rows) {
+  return groupByIndustry(rows).map(g => `
+    <tr class="scan-group-head${g.leadingTheme ? ' leading-theme' : ''}" title="${g.leadingTheme ? 'Leading theme — one of the strongest relative-strength industries this run' : ''}">
+      <td colspan="5">${esc(g.industry)} <span class="scan-group-count">${g.rows.length}</span></td>
+    </tr>
+    ${g.rows.map(scanMatchRow).join('')}`).join('');
 }
 
 function renderScanner() {
@@ -1065,7 +1096,7 @@ function renderScanner() {
   SCAN_PATTERN_GROUPS.forEach(({ key, bodyId, emptyId }) => {
     const group = matches.filter(m => (m.patterns || '').split(', ').includes(key));
     $(emptyId).hidden = group.length > 0;
-    $(bodyId).innerHTML = group.map(scanMatchRow).join('');
+    $(bodyId).innerHTML = renderScanGroups(group);
   });
 }
 

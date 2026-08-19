@@ -229,6 +229,11 @@ main { padding: 20px; max-width: 1500px; margin: 0 auto; }
 
 .leading-theme { color: var(--accent); font-weight: 700; }
 
+.scan-group-head td { background: var(--surface-2); font-size: 12px; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--muted); font-weight: 700; padding: 7px 10px; }
+.scan-group-head.leading-theme td { color: var(--accent); }
+.scan-group-count { color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
 /* ---------- positions ---------- */
 .pos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 20px; }
 .pos-card {
