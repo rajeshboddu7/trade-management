@@ -1033,9 +1033,9 @@ const SCAN_PATTERN_GROUPS = [
   { key: 'high_consolidation', bodyId: '#scanBodyHighConsolidation', emptyId: '#scanEmptyHighConsolidation' },
 ];
 
-function scanMatchRow(m) {
+function scanMatchRow(m, groupId, collapsed) {
   return `
-    <tr>
+    <tr class="scan-group-row" data-group="${esc(groupId)}"${collapsed ? ' hidden' : ''}>
       <td><b>${esc(m.ticker)}</b></td>
       <td class="num">${m.last_close != null ? fmtMoney(m.last_close) : '—'}</td>
       <td class="num">${m.rs_percentile != null ? m.rs_percentile.toFixed(1) : '—'}</td>
@@ -1069,12 +1069,23 @@ function groupByIndustry(rows) {
   return groups;
 }
 
-function renderScanGroups(rows) {
-  return groupByIndustry(rows).map(g => `
-    <tr class="scan-group-head${g.leadingTheme ? ' leading-theme' : ''}" title="${g.leadingTheme ? 'Leading theme — one of the strongest relative-strength industries this run' : ''}">
-      <td colspan="5">${esc(g.industry)} <span class="scan-group-count">${g.rows.length}</span></td>
+// Which industry groups are collapsed, keyed by "<patternKey>::<industry>" so it stays stable
+// (and survives) across re-renders — renderScanner() rebuilds each tbody's HTML from scratch on
+// every call (any trade/position save re-renders the whole app), so collapse state can't live
+// in the DOM the way the pattern-panel <details> elements' own open/closed state does.
+const collapsedScanGroups = new Set();
+
+function renderScanGroups(rows, patternKey) {
+  return groupByIndustry(rows).map(g => {
+    const gid = `${patternKey}::${g.industry}`;
+    const collapsed = collapsedScanGroups.has(gid);
+    return `
+    <tr class="scan-group-head${g.leadingTheme ? ' leading-theme' : ''}${collapsed ? ' collapsed' : ''}" data-group="${esc(gid)}"
+        title="${g.leadingTheme ? 'Leading theme — one of the strongest relative-strength industries this run' : ''}">
+      <td colspan="5"><span class="scan-group-chevron">▸</span>${esc(g.industry)} <span class="scan-group-count">${g.rows.length}</span></td>
     </tr>
-    ${g.rows.map(scanMatchRow).join('')}`).join('');
+    ${g.rows.map(m => scanMatchRow(m, gid, collapsed)).join('')}`;
+  }).join('');
 }
 
 function renderScanner() {
@@ -1096,7 +1107,7 @@ function renderScanner() {
   SCAN_PATTERN_GROUPS.forEach(({ key, bodyId, emptyId }) => {
     const group = matches.filter(m => (m.patterns || '').split(', ').includes(key));
     $(emptyId).hidden = group.length > 0;
-    $(bodyId).innerHTML = renderScanGroups(group);
+    $(bodyId).innerHTML = renderScanGroups(group, key);
   });
 }
 
@@ -1662,6 +1673,15 @@ $('#calGrid').addEventListener('click', e => {
   selectedDate = cell.dataset.date;
   renderCalendar();
   renderDayPanel();
+});
+
+// scanner — click an industry group header to collapse/expand just its rows
+$('#view-scanner').addEventListener('click', e => {
+  const head = e.target.closest('.scan-group-head');
+  if (!head) return;
+  const gid = head.dataset.group;
+  if (collapsedScanGroups.has(gid)) collapsedScanGroups.delete(gid); else collapsedScanGroups.add(gid);
+  renderScanner();
 });
 
 // table

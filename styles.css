@@ -229,10 +229,21 @@ main { padding: 20px; max-width: 1500px; margin: 0 auto; }
 
 .leading-theme { color: var(--accent); font-weight: 700; }
 
+.scan-group-head { cursor: pointer; user-select: none; }
 .scan-group-head td { background: var(--surface-2); font-size: 12px; text-transform: uppercase;
   letter-spacing: .04em; color: var(--muted); font-weight: 700; padding: 7px 10px; }
 .scan-group-head.leading-theme td { color: var(--accent); }
+.scan-group-head:hover td { background: var(--border); }
 .scan-group-count { color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+.scan-group-chevron { display: inline-block; width: 12px; margin-right: 2px; transition: transform .15s; }
+.scan-group-head:not(.collapsed) .scan-group-chevron { transform: rotate(90deg); }
+
+.scan-pattern-panel > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.scan-pattern-panel > summary::-webkit-details-marker { display: none; }
+.scan-pattern-panel > summary::before { content: '▸'; color: var(--muted); font-size: 11px; transition: transform .15s; }
+.scan-pattern-panel[open] > summary::before { transform: rotate(90deg); }
+.scan-pattern-panel > summary h3 { margin: 0; }
+.scan-pattern-panel > summary:hover h3 { color: var(--text); }
 
 /* ---------- positions ---------- */
 .pos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 20px; }

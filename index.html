@@ -285,32 +285,32 @@
     <div class="stat-grid" id="scanSummaryGrid"></div>
     <div class="empty" id="scanEmpty" hidden>No scan results yet — run scanner.py with SCANNER_SUPABASE_EMAIL/PASSWORD set to deliver matches here.</div>
 
-    <div class="panel">
-      <h3>IPO-high breakout / consolidation</h3>
+    <details class="panel scan-pattern-panel" open>
+      <summary><h3>IPO-high breakout / consolidation</h3></summary>
       <div class="table-wrap"><table class="tbl">
         <thead><tr><th>Ticker</th><th class="num">Last</th><th class="num">RS %ile</th><th>Leader</th><th>Earnings</th></tr></thead>
         <tbody id="scanBodyIpoBase"></tbody>
       </table></div>
       <div class="empty" id="scanEmptyIpoBase" hidden>No matches.</div>
-    </div>
+    </details>
 
-    <div class="panel">
-      <h3>Downtrend reversal</h3>
+    <details class="panel scan-pattern-panel" open>
+      <summary><h3>Downtrend reversal</h3></summary>
       <div class="table-wrap"><table class="tbl">
         <thead><tr><th>Ticker</th><th class="num">Last</th><th class="num">RS %ile</th><th>Leader</th><th>Earnings</th></tr></thead>
         <tbody id="scanBodyDowntrendReversal"></tbody>
       </table></div>
       <div class="empty" id="scanEmptyDowntrendReversal" hidden>No matches.</div>
-    </div>
+    </details>
 
-    <div class="panel">
-      <h3>52-week/all-time-high consolidation (volume dry-up) <span class="mono" id="scanGeneratedAt" style="font-weight:400"></span></h3>
+    <details class="panel scan-pattern-panel" open>
+      <summary><h3>52-week/all-time-high consolidation (volume dry-up) <span class="mono" id="scanGeneratedAt" style="font-weight:400"></span></h3></summary>
       <div class="table-wrap"><table class="tbl">
         <thead><tr><th>Ticker</th><th class="num">Last</th><th class="num">RS %ile</th><th>Leader</th><th>Earnings</th></tr></thead>
         <tbody id="scanBodyHighConsolidation"></tbody>
       </table></div>
       <div class="empty" id="scanEmptyHighConsolidation" hidden>No matches.</div>
-    </div>
+    </details>
   </section>
 </main>
 
