@@ -1290,7 +1290,16 @@ function openDialog(trade, presetDate) {
     for (const [k, v] of Object.entries(trade)) {
       if (f.elements[k]) f.elements[k].value = v ?? '';
     }
-    if (trade.stop != null && trade.stop !== '') f.dataset.stopTouched = '1';
+    if (trade.stop != null && trade.stop !== '') {
+      // Only treat the stop as deliberately customized if it actually differs from what the 5%
+      // default would compute right now — a stop that's just never been anything but the auto
+      // value should keep tracking entry/side edits, not freeze at whatever entry was when it
+      // was first saved (that's how a saved trade's stop silently drifts off 5% after an entry
+      // correction: it looks "custom" merely for having a value, even though no one chose it).
+      const autoStop = computeDefaultStop(trade.entry, trade.side);
+      const matchesAuto = autoStop != null && Math.abs(Number(trade.stop) - autoStop) < 0.005;
+      f.dataset.stopTouched = matchesAuto ? '' : '1';
+    }
   } else {
     f.elements.id.value = '';
     f.elements.date.value = presetDate || ymd(new Date());
