@@ -451,7 +451,24 @@ function activePriceView() {
   if ($('#view-trades').classList.contains('is-active')) return 'trades';
   if ($('#view-positions').classList.contains('is-active')) return 'positions';
   if ($('#view-tradescheck').classList.contains('is-active')) return 'tradescheck';
+  if ($('#view-scanner').classList.contains('is-active')) return 'scanner';
   return null;
+}
+
+/** The Scanner tab can have 100+ unique tickers on screen at once (vs. a handful of open
+ *  trades/positions), so firing every quote fetch at once would blow through free-tier rate
+ *  limits (Finnhub, and the unofficial Yahoo endpoint behind a CORS proxy) and stampede-fail.
+ *  This caps how many quote fetches are in flight at a time; the rest just wait their turn. */
+const quoteFetchQueue = [];
+let activeQuoteFetches = 0;
+const MAX_CONCURRENT_QUOTE_FETCHES = 4;
+
+function drainQuoteFetchQueue() {
+  while (activeQuoteFetches < MAX_CONCURRENT_QUOTE_FETCHES && quoteFetchQueue.length) {
+    const run = quoteFetchQueue.shift();
+    activeQuoteFetches++;
+    run().finally(() => { activeQuoteFetches--; drainQuoteFetchQueue(); });
+  }
 }
 
 function ensureCurrentPrice(symbol) {
@@ -459,7 +476,7 @@ function ensureCurrentPrice(symbol) {
   const c = currentPriceCache[symbol];
   if (c && (c.loading || (c.fetchedAt && Date.now() - c.fetchedAt < CURRENT_PRICE_TTL_MS))) return;
   currentPriceCache[symbol] = { loading: true };
-  (getFinnhubApiKey() ? fetchFinnhubQuote(symbol) : fetchYahooChart(symbol).then(result => {
+  quoteFetchQueue.push(() => (getFinnhubApiKey() ? fetchFinnhubQuote(symbol) : fetchYahooChart(symbol).then(result => {
     const meta = result && result.meta;
     if (!meta || meta.regularMarketPrice == null) throw new Error('No quote in response');
     return { price: meta.regularMarketPrice, prevClose: meta.previousClose ?? null };
@@ -472,8 +489,10 @@ function ensureCurrentPrice(symbol) {
     if (view === 'trades') renderTrades();
     else if (view === 'positions') renderPositions();
     else if (view === 'tradescheck') renderTradesCheck();
+    else if (view === 'scanner') renderScanner();
     if (quickGroupDlg.open && quickGroupOpenSymbol === symbol) openQuickGroup(quickGroupOpenSymbol, quickGroupOpenSide);
-  });
+  }));
+  drainQuoteFetchQueue();
 }
 
 function quickGroupUnrealizedRow(g) {
@@ -1034,11 +1053,28 @@ const SCAN_PATTERN_GROUPS = [
   { key: 'trend_continuation', bodyId: '#scanBodyTrendContinuation', emptyId: '#scanEmptyTrendContinuation' },
 ];
 
+/** Live quote for a scan match, independent of when the scan itself last ran — the scan's
+ *  own last_close is only used as the up/down comparison baseline and as a fallback while
+ *  the live quote is still loading or failed. */
+function scanCurrentPriceCell(m) {
+  const c = currentPriceCache[m.ticker];
+  if (!c) {
+    ensureCurrentPrice(m.ticker);
+    return m.last_close != null ? `<span class="pill" title="Scan-time close, live quote loading…">${fmtMoney(m.last_close)}</span>` : '<span class="pill">…</span>';
+  }
+  if (c.loading) return m.last_close != null ? `<span class="pill" title="Scan-time close, live quote loading…">${fmtMoney(m.last_close)}</span>` : '<span class="pill">…</span>';
+  if (c.error) return m.last_close != null ? `<span class="pill" title="${esc(c.error)} — showing scan-time close">${fmtMoney(m.last_close)}</span>` : `<span class="pill" title="${esc(c.error)}">—</span>`;
+  if (m.last_close == null) return fmtNum(c.price);
+  const up = c.price > m.last_close, down = c.price < m.last_close;
+  const toneClass = up ? 'pos' : down ? 'neg' : 'zero';
+  return `<span class="${toneClass}" title="Close at scan time: ${fmtMoney(m.last_close)}">${fmtNum(c.price)}</span>`;
+}
+
 function scanMatchRow(m, groupId, collapsed) {
   return `
     <tr class="scan-group-row" data-group="${esc(groupId)}"${collapsed ? ' hidden' : ''}>
       <td><b>${esc(m.ticker)}</b></td>
-      <td class="num">${m.last_close != null ? fmtMoney(m.last_close) : '—'}</td>
+      <td class="num">${scanCurrentPriceCell(m)}</td>
       <td class="num">${m.rs_percentile != null ? m.rs_percentile.toFixed(1) : '—'}</td>
       <td>${m.sector_leader ? '<span class="pill working">Leader</span>' : ''}</td>
       <td>${m.earnings_within_14d ? '<span class="pill watch">Soon</span>' : ''}</td>
