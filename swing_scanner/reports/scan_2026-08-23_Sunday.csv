@@ -1,0 +1,180 @@
+ticker,patterns,ipo_base_detail,downtrend_reversal_detail,high_consolidation_detail,last_close,avg_dollar_vol_20d,sector,industry,rs_percentile,sector_leader,leading_theme,earnings_within_14d,earnings_date
+NAVN,"ipo_base, high_consolidation","{'match': True, 'ipo_high': 22.75, 'state': 'breakout', 'pct_from_ipo_high': 28.18}",,"{'match': True, 'window_high': 29.99, 'pct_from_high': -2.77, 'vol_contraction_ratio': 0.45, 'atr_contraction_ratio': 0.69}",29.16,62857781.0,,,99.1,False,False,False,
+MAN,high_consolidation,,,"{'match': True, 'window_high': 62.45, 'pct_from_high': -1.6, 'vol_contraction_ratio': 0.68, 'atr_contraction_ratio': 0.78}",61.45,61708543.0,,,98.7,False,False,False,
+CRNX,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 35.88, 'higher_low': 32.71, 'pct_above_reclaim': 136.0}","{'match': True, 'window_high': 84.79, 'pct_from_high': -0.12, 'vol_contraction_ratio': 0.6, 'atr_contraction_ratio': 0.1}",84.69,224040717.0,Healthcare,Biotechnology,98.5,True,True,False,2026-11-05 15:00:00
+MBX,ipo_base,"{'match': True, 'ipo_high': 27.5, 'state': 'breakout', 'pct_from_ipo_high': 141.2}",,,66.33,31822336.0,,,98.0,False,False,False,
+HNGE,ipo_base,"{'match': True, 'ipo_high': 62.18, 'state': 'breakout', 'pct_from_ipo_high': 42.2}",,,88.42,138558491.0,,,97.6,False,False,False,
+SNDK,ipo_base,"{'match': True, 'ipo_high': 58.36, 'state': 'breakout', 'pct_from_ipo_high': 2634.89}",,,1596.08,23481948107.0,,,97.4,False,False,False,
+HTFL,ipo_base,"{'match': True, 'ipo_high': 41.22, 'state': 'breakout', 'pct_from_ipo_high': 20.69}",,,49.75,75308735.0,,,97.2,False,False,False,
+APGE,high_consolidation,,,"{'match': True, 'window_high': 134.88, 'pct_from_high': -0.1, 'vol_contraction_ratio': 0.38, 'atr_contraction_ratio': 0.08}",134.75,171383038.0,Healthcare,Biotechnology,96.8,True,True,False,2026-11-09 07:00:00
+RBRK,ipo_base,"{'match': True, 'ipo_high': 40.0, 'state': 'breakout', 'pct_from_ipo_high': 150.22}",,,100.09,280675890.0,,,96.5,False,False,False,
+CBRL,high_consolidation,,,"{'match': True, 'window_high': 61.5, 'pct_from_high': -6.27, 'vol_contraction_ratio': 0.71, 'atr_contraction_ratio': 0.8}",57.65,44774193.0,Consumer Cyclical,Restaurants,95.9,True,False,False,2026-09-16 16:00:00
+NBIS,ipo_base,"{'match': True, 'ipo_high': 40.96, 'state': 'breakout', 'pct_from_ipo_high': 434.99}",,,219.13,6243093643.0,,,95.6,False,False,False,
+ALAB,ipo_base,"{'match': True, 'ipo_high': 95.21, 'state': 'breakout', 'pct_from_ipo_high': 199.31}",,,284.97,1474004728.0,Technology,Semiconductors,95.0,True,True,False,2026-11-03 15:00:00
+PTRN,ipo_base,"{'match': True, 'ipo_high': 20.1, 'state': 'breakout', 'pct_from_ipo_high': 3.83}",,,20.87,39723138.0,,,94.8,False,False,False,
+NRIX,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 24.64, 'higher_low': 22.64, 'pct_above_reclaim': 8.44}","{'match': True, 'window_high': 28.23, 'pct_from_high': -5.35, 'vol_contraction_ratio': 0.67, 'atr_contraction_ratio': 0.67}",26.72,28490685.0,,,93.7,False,False,False,
+ASTH,downtrend_reversal,,"{'match': True, 'reclaim_level': 38.35, 'higher_low': 34.41, 'pct_above_reclaim': 2.61}",,39.35,19284040.0,Healthcare,Medical Care Facilities,93.3,True,True,False,2026-11-05 15:00:00
+MRX,downtrend_reversal,,"{'match': True, 'reclaim_level': 67.01, 'higher_low': 59.34, 'pct_above_reclaim': 8.92}",,72.99,45016913.0,,,92.8,False,False,False,
+ROKU,high_consolidation,,,"{'match': True, 'window_high': 159.69, 'pct_from_high': -1.38, 'vol_contraction_ratio': 0.41, 'atr_contraction_ratio': 0.59}",157.49,395698264.0,,,92.3,False,False,False,
+BLFS,high_consolidation,,,"{'match': True, 'window_high': 38.1, 'pct_from_high': -2.62, 'vol_contraction_ratio': 0.44, 'atr_contraction_ratio': 0.69}",37.1,23608316.0,Healthcare,Medical Instruments & Supplies,92.2,True,True,False,2026-11-05 15:00:00
+VIRT,downtrend_reversal,,"{'match': True, 'reclaim_level': 59.92, 'higher_low': 54.66, 'pct_above_reclaim': 13.37}",,67.93,91367862.0,,,92.0,False,False,False,
+AMBQ,ipo_base,"{'match': True, 'ipo_high': 51.76, 'state': 'breakout', 'pct_from_ipo_high': 14.02}",,,59.02,33136834.0,Technology,Semiconductors,90.8,True,True,False,2026-11-05 07:00:00
+RAPP,"ipo_base, high_consolidation","{'match': True, 'ipo_high': 28.08, 'state': 'breakout', 'pct_from_ipo_high': 71.79}",,"{'match': True, 'window_high': 49.9, 'pct_from_high': -3.33, 'vol_contraction_ratio': 0.67, 'atr_contraction_ratio': 0.79}",48.24,12529118.0,,,90.7,False,False,False,
+KMX,high_consolidation,,,"{'match': True, 'window_high': 63.0, 'pct_from_high': -1.38, 'vol_contraction_ratio': 0.59, 'atr_contraction_ratio': 0.79}",62.13,120750979.0,,,90.3,False,False,False,
+IMAX,downtrend_reversal,,"{'match': True, 'reclaim_level': 41.05, 'higher_low': 37.04, 'pct_above_reclaim': 28.48}",,52.74,70919847.0,,,89.6,False,False,False,
+SEPN,ipo_base,"{'match': True, 'ipo_high': 28.99, 'state': 'breakout', 'pct_from_ipo_high': 37.98}",,,40.0,18507861.0,,,89.5,False,False,False,
+CON,ipo_base,"{'match': True, 'ipo_high': 24.27, 'state': 'breakout', 'pct_from_ipo_high': 44.2}",,,35.0,31853886.0,Healthcare,Medical Care Facilities,88.8,True,True,False,2026-11-05 15:00:00
+NP,ipo_base,"{'match': True, 'ipo_high': 33.24, 'state': 'breakout', 'pct_from_ipo_high': 0.38}",,,33.36,20996623.0,,,88.5,False,False,False,
+GRAL,ipo_base,"{'match': True, 'ipo_high': 23.36, 'state': 'breakout', 'pct_from_ipo_high': 240.5}",,,79.54,55278262.0,,,88.1,False,False,False,
+ZBIO,ipo_base,"{'match': True, 'ipo_high': 26.25, 'state': 'breakout', 'pct_from_ipo_high': 23.0}",,,32.29,23965547.0,,,87.6,False,False,False,
+SAIC,high_consolidation,,,"{'match': True, 'window_high': 129.7, 'pct_from_high': -1.28, 'vol_contraction_ratio': 0.7, 'atr_contraction_ratio': 0.8}",128.04,47580338.0,,,87.5,False,False,False,
+SAFT,high_consolidation,,,"{'match': True, 'window_high': 103.75, 'pct_from_high': -0.15, 'vol_contraction_ratio': 0.67, 'atr_contraction_ratio': 0.45}",103.59,33642038.0,,,87.2,False,False,False,
+KSPI,downtrend_reversal,,"{'match': True, 'reclaim_level': 92.28, 'higher_low': 84.46, 'pct_above_reclaim': 14.38}",,105.55,55935093.0,,,86.8,False,False,False,
+TEM,downtrend_reversal,,"{'match': True, 'reclaim_level': 57.03, 'higher_low': 49.35, 'pct_above_reclaim': 27.46}",,72.69,384047836.0,,,86.4,False,False,False,
+TECH,high_consolidation,,,"{'match': True, 'window_high': 72.62, 'pct_from_high': -0.41, 'vol_contraction_ratio': 0.53, 'atr_contraction_ratio': 0.22}",72.32,261085381.0,,,86.0,False,False,False,
+APA,downtrend_reversal,,"{'match': True, 'reclaim_level': 37.7, 'higher_low': 34.12, 'pct_above_reclaim': 15.09}",,43.39,237332853.0,Energy,Oil & Gas E&P,85.9,True,False,False,2026-11-04 15:00:00
+ARMK,downtrend_reversal,,"{'match': True, 'reclaim_level': 41.92, 'higher_low': 38.51, 'pct_above_reclaim': 42.59}",,59.77,161488566.0,Industrials,Specialty Business Services,84.9,True,False,False,2026-11-24 07:00:00
+ANAB,downtrend_reversal,,"{'match': True, 'reclaim_level': 56.05, 'higher_low': 50.51, 'pct_above_reclaim': 3.02}",,57.74,22556930.0,Healthcare,Biotechnology,84.8,False,True,True,2026-08-24 16:00:00
+ATKR,downtrend_reversal,,"{'match': True, 'reclaim_level': 77.19, 'higher_low': 70.59, 'pct_above_reclaim': 21.26}",,93.6,135195139.0,Industrials,Electrical Equipment & Parts,84.4,True,False,False,2026-11-19 07:00:00
+A,downtrend_reversal,,"{'match': True, 'reclaim_level': 138.36, 'higher_low': 125.0, 'pct_above_reclaim': 14.91}",,159.0,254069204.0,Healthcare,Diagnostics & Research,84.4,False,True,True,2026-08-26 16:00:00
+NESR,ipo_base,"{'match': True, 'ipo_high': 9.8, 'state': 'breakout', 'pct_from_ipo_high': 237.04}",,,33.03,70540812.0,,,83.2,False,False,False,
+BKNG,downtrend_reversal,,"{'match': True, 'reclaim_level': 185.92, 'higher_low': 171.02, 'pct_above_reclaim': 12.75}",,209.62,1221627980.0,Consumer Cyclical,Travel Services,82.5,True,True,False,2026-10-27 16:00:00
+RAL,ipo_base,"{'match': True, 'ipo_high': 54.86, 'state': 'breakout', 'pct_from_ipo_high': 15.96}",,,63.61,115708886.0,,,82.4,False,False,False,
+MRK,downtrend_reversal,,"{'match': True, 'reclaim_level': 122.58, 'higher_low': 111.57, 'pct_above_reclaim': 24.45}",,152.55,1445996186.0,,,81.9,False,False,False,
+FRO,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 39.27, 'higher_low': 35.71, 'pct_above_reclaim': 11.2}","{'match': True, 'window_high': 45.17, 'pct_from_high': -3.32, 'vol_contraction_ratio': 0.74, 'atr_contraction_ratio': 0.8}",43.67,77432476.0,,,81.6,False,False,False,
+CHRD,downtrend_reversal,,"{'match': True, 'reclaim_level': 139.7, 'higher_low': 127.22, 'pct_above_reclaim': 5.83}",,147.85,103650920.0,Energy,Oil & Gas E&P,81.3,True,False,False,2026-11-03 15:00:00
+ARWR,high_consolidation,,,"{'match': True, 'window_high': 95.49, 'pct_from_high': -8.78, 'vol_contraction_ratio': 0.46, 'atr_contraction_ratio': 0.76}",87.11,113859625.0,Healthcare,Biotechnology,81.3,False,True,False,2026-11-24 15:00:00
+IDYA,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 37.9, 'higher_low': 34.56, 'pct_above_reclaim': 4.67}","{'match': True, 'window_high': 40.58, 'pct_from_high': -2.24, 'vol_contraction_ratio': 0.68, 'atr_contraction_ratio': 0.75}",39.67,27587759.0,,,81.0,False,False,False,
+BOW,ipo_base,"{'match': True, 'ipo_high': 31.23, 'state': 'breakout', 'pct_from_ipo_high': 7.27}",,,33.5,16157083.0,Financial Services,Insurance - Property & Casualty,80.8,True,False,False,2026-11-03 07:00:00
+BNY,high_consolidation,,,"{'match': True, 'window_high': 165.69, 'pct_from_high': -4.35, 'vol_contraction_ratio': 0.6, 'atr_contraction_ratio': 0.76}",158.49,395527075.0,Financial Services,Banks - Diversified,79.9,True,False,False,2026-10-15 08:00:00
+CZR,downtrend_reversal,,"{'match': True, 'reclaim_level': 28.8, 'higher_low': 25.2, 'pct_above_reclaim': 3.33}",,29.76,116923447.0,Consumer Cyclical,Resorts & Casinos,79.9,True,False,False,2026-10-27 16:00:00
+DNLI,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 24.68, 'higher_low': 22.63, 'pct_above_reclaim': 0.97}","{'match': True, 'window_high': 27.3, 'pct_from_high': -8.72, 'vol_contraction_ratio': 0.66, 'atr_contraction_ratio': 0.76}",24.92,33249070.0,,,79.1,False,False,False,
+LXP,high_consolidation,,,"{'match': True, 'window_high': 61.61, 'pct_from_high': -1.15, 'vol_contraction_ratio': 0.73, 'atr_contraction_ratio': 0.23}",60.9,42752238.0,,,78.6,False,False,False,
+SBLK,downtrend_reversal,,"{'match': True, 'reclaim_level': 26.45, 'higher_low': 24.12, 'pct_above_reclaim': 15.3}",,30.5,43375087.0,,,78.3,False,False,False,
+MLKN,high_consolidation,,,"{'match': True, 'window_high': 24.71, 'pct_from_high': -6.8, 'vol_contraction_ratio': 0.57, 'atr_contraction_ratio': 0.77}",23.03,13277075.0,,,76.8,False,False,False,
+BHP,downtrend_reversal,,"{'match': True, 'reclaim_level': 86.33, 'higher_low': 79.05, 'pct_above_reclaim': 12.39}",,97.03,241178665.0,Basic Materials,Other Industrial Metals & Mining,76.2,True,False,False,2027-02-15 15:00:00
+SCHW,high_consolidation,,,"{'match': True, 'window_high': 112.4, 'pct_from_high': -0.09, 'vol_contraction_ratio': 0.66, 'atr_contraction_ratio': 0.76}",112.3,741381750.0,,,75.1,False,False,False,
+EGO,downtrend_reversal,,"{'match': True, 'reclaim_level': 33.12, 'higher_low': 29.7, 'pct_above_reclaim': 38.04}",,45.72,103755452.0,,,75.0,False,False,False,
+GRMN,downtrend_reversal,,"{'match': True, 'reclaim_level': 250.34, 'higher_low': 228.51, 'pct_above_reclaim': 17.78}",,294.85,312586151.0,,,73.7,False,False,False,
+MICC,ipo_base,"{'match': True, 'ipo_high': 19.93, 'state': 'breakout', 'pct_from_ipo_high': 0.15}",,,19.96,14806030.0,,,73.5,False,False,False,
+AMP,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 483.78, 'higher_low': 431.89, 'pct_above_reclaim': 14.84}","{'match': True, 'window_high': 572.56, 'pct_from_high': -2.96, 'vol_contraction_ratio': 0.62, 'atr_contraction_ratio': 0.79}",555.59,244563730.0,Financial Services,Asset Management,73.2,True,False,False,2026-10-29 08:00:00
+INGM,ipo_base,"{'match': True, 'ipo_high': 25.05, 'state': 'breakout', 'pct_from_ipo_high': 9.78}",,,27.5,25126640.0,,,72.2,False,False,False,
+CACI,downtrend_reversal,,"{'match': True, 'reclaim_level': 515.67, 'higher_low': 435.92, 'pct_above_reclaim': 25.54}",,647.39,179408856.0,Technology,Information Technology Services,71.5,False,False,False,2026-10-21 16:00:00
+AUGO,downtrend_reversal,,"{'match': True, 'reclaim_level': 57.52, 'higher_low': 52.33, 'pct_above_reclaim': 51.7}",,87.26,67055244.0,Basic Materials,Gold,71.1,False,False,False,2026-11-05 15:00:00
+SKM,downtrend_reversal,,"{'match': True, 'reclaim_level': 35.86, 'higher_low': 32.84, 'pct_above_reclaim': 12.35}",,40.29,79809189.0,,,71.0,False,False,False,
+BAC,downtrend_reversal,,"{'match': True, 'reclaim_level': 55.11, 'higher_low': 49.05, 'pct_above_reclaim': 11.93}",,61.69,1751341682.0,Financial Services,Banks - Diversified,70.8,True,False,False,2026-10-14 08:00:00
+ISNPY,high_consolidation,,,"{'match': True, 'window_high': 48.13, 'pct_from_high': -1.31, 'vol_contraction_ratio': 0.72, 'atr_contraction_ratio': 0.68}",47.5,7420854.0,,,70.8,False,False,False,
+J,downtrend_reversal,,"{'match': True, 'reclaim_level': 128.59, 'higher_low': 116.84, 'pct_above_reclaim': 16.72}",,150.08,132559937.0,,,70.6,False,False,False,
+HP,downtrend_reversal,,"{'match': True, 'reclaim_level': 35.87, 'higher_low': 32.4, 'pct_above_reclaim': 21.42}",,43.55,51852577.0,,,70.5,False,False,False,
+WASH,downtrend_reversal,,"{'match': True, 'reclaim_level': 32.51, 'higher_low': 29.48, 'pct_above_reclaim': 22.14}",,39.71,5251054.0,,,70.4,False,False,False,
+PRU,downtrend_reversal,,"{'match': True, 'reclaim_level': 101.46, 'higher_low': 91.41, 'pct_above_reclaim': 19.41}",,121.15,236813297.0,,,70.3,False,False,False,
+ACT,downtrend_reversal,,"{'match': True, 'reclaim_level': 44.06, 'higher_low': 40.19, 'pct_above_reclaim': 11.65}",,49.19,16063267.0,Financial Services,Insurance - Specialty,70.1,True,False,False,2026-11-09 15:00:00
+CHE,downtrend_reversal,,"{'match': True, 'reclaim_level': 449.41, 'higher_low': 410.48, 'pct_above_reclaim': 20.28}",,540.57,90380145.0,Healthcare,Medical Care Facilities,69.5,False,True,False,2026-10-27 16:00:00
+ACA,high_consolidation,,,"{'match': True, 'window_high': 146.87, 'pct_from_high': -1.34, 'vol_contraction_ratio': 0.68, 'atr_contraction_ratio': 0.27}",144.9,88766735.0,Industrials,Engineering & Construction,69.4,True,False,False,2026-10-29 16:00:00
+JCAP,ipo_base,"{'match': True, 'ipo_high': 19.55, 'state': 'breakout', 'pct_from_ipo_high': 14.04}",,,22.29,9590160.0,,,68.7,False,False,False,
+HMC,downtrend_reversal,,"{'match': True, 'reclaim_level': 28.25, 'higher_low': 25.55, 'pct_above_reclaim': 18.12}",,33.37,37265800.0,,,68.5,False,False,False,
+BNPQY,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 54.27, 'higher_low': 49.17, 'pct_above_reclaim': 15.88}","{'match': True, 'window_high': 65.5, 'pct_from_high': -3.98, 'vol_contraction_ratio': 0.65, 'atr_contraction_ratio': 0.78}",62.89,12646430.0,Financial Services,Banks - Regional,68.0,True,False,False,2026-10-28 08:00:00
+ABT,downtrend_reversal,,"{'match': True, 'reclaim_level': 97.44, 'higher_low': 87.64, 'pct_above_reclaim': 19.7}",,116.64,925493206.0,Healthcare,Medical Devices,67.9,False,True,False,2026-10-14 08:00:00
+INBX,ipo_base,"{'match': True, 'ipo_high': 18.95, 'state': 'breakout', 'pct_from_ipo_high': 446.86}",,,103.63,21500861.0,,,67.6,False,False,False,
+WHD,downtrend_reversal,,"{'match': True, 'reclaim_level': 56.97, 'higher_low': 51.94, 'pct_above_reclaim': 21.87}",,69.43,56523192.0,,,67.4,False,False,False,
+CFR,downtrend_reversal,,"{'match': True, 'reclaim_level': 146.22, 'higher_low': 132.35, 'pct_above_reclaim': 12.29}",,164.19,97989850.0,Financial Services,Banks - Regional,67.2,False,False,False,2026-10-29 08:00:00
+WBI,ipo_base,"{'match': True, 'ipo_high': 27.02, 'state': 'breakout', 'pct_from_ipo_high': 17.32}",,,31.7,19250383.0,,,67.0,False,False,False,
+NDAQ,high_consolidation,,,"{'match': True, 'window_high': 101.11, 'pct_from_high': -2.85, 'vol_contraction_ratio': 0.59, 'atr_contraction_ratio': 0.71}",98.22,285937197.0,,,66.9,False,False,False,
+RSHGY,ipo_base,"{'match': True, 'ipo_high': 21.43, 'state': 'breakout', 'pct_from_ipo_high': 40.06}",,,30.02,6918209.0,,,66.5,False,False,False,
+ZM,downtrend_reversal,,"{'match': True, 'reclaim_level': 94.45, 'higher_low': 83.32, 'pct_above_reclaim': 13.74}",,107.43,294782224.0,,,66.2,False,False,False,
+WSBC,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 36.53, 'higher_low': 32.36, 'pct_above_reclaim': 11.84}","{'match': True, 'window_high': 43.02, 'pct_from_high': -5.02, 'vol_contraction_ratio': 0.53, 'atr_contraction_ratio': 0.76}",40.86,32823789.0,,,66.0,False,False,False,
+PACS,ipo_base,"{'match': True, 'ipo_high': 31.76, 'state': 'breakout', 'pct_from_ipo_high': 39.33}",,,44.25,40761001.0,,,65.3,False,False,False,
+NBTB,downtrend_reversal,,"{'match': True, 'reclaim_level': 46.06, 'higher_low': 41.25, 'pct_above_reclaim': 13.1}",,52.09,17770571.0,,,65.2,False,False,False,
+TXRH,downtrend_reversal,,"{'match': True, 'reclaim_level': 184.79, 'higher_low': 160.0, 'pct_above_reclaim': 10.66}",,204.48,176357141.0,,,64.9,False,False,False,
+FOXA,high_consolidation,,,"{'match': True, 'window_high': 76.02, 'pct_from_high': -9.84, 'vol_contraction_ratio': 0.73, 'atr_contraction_ratio': 0.79}",68.54,330319841.0,,,64.5,False,False,False,
+JPM,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 318.8, 'higher_low': 292.35, 'pct_above_reclaim': 10.28}","{'match': True, 'window_high': 366.5, 'pct_from_high': -4.07, 'vol_contraction_ratio': 0.65, 'atr_contraction_ratio': 0.79}",351.58,2213773254.0,,,64.5,False,False,False,
+SOBO,ipo_base,"{'match': True, 'ipo_high': 24.99, 'state': 'breakout', 'pct_from_ipo_high': 50.96}",,,37.72,18261656.0,,,64.3,False,False,False,
+UNCRY,high_consolidation,,,"{'match': True, 'window_high': 49.52, 'pct_from_high': -1.94, 'vol_contraction_ratio': 0.51, 'atr_contraction_ratio': 0.74}",48.56,11715927.0,,,64.3,False,False,False,
+LOAR,ipo_base,"{'match': True, 'ipo_high': 65.0, 'state': 'breakout', 'pct_from_ipo_high': 15.38}",,,75.0,45238979.0,,,64.2,False,False,False,
+CATY,high_consolidation,,,"{'match': True, 'window_high': 65.26, 'pct_from_high': -4.54, 'vol_contraction_ratio': 0.66, 'atr_contraction_ratio': 0.77}",62.3,24501756.0,Financial Services,Banks - Regional,63.4,False,False,False,2026-10-21 16:00:00
+V,downtrend_reversal,,"{'match': True, 'reclaim_level': 340.64, 'higher_low': 308.43, 'pct_above_reclaim': 8.92}",,371.04,2690335000.0,,,63.0,False,False,False,
+CRCL,downtrend_reversal,,"{'match': True, 'reclaim_level': 64.36, 'higher_low': 59.12, 'pct_above_reclaim': 36.69}",,87.98,925033388.0,Financial Services,Capital Markets,62.7,False,False,False,2026-11-11 07:00:00
+FLNG,downtrend_reversal,,"{'match': True, 'reclaim_level': 31.69, 'higher_low': 28.77, 'pct_above_reclaim': 1.07}",,32.03,9623007.0,,,62.5,False,False,False,
+WRBY,downtrend_reversal,,"{'match': True, 'reclaim_level': 27.09, 'higher_low': 24.84, 'pct_above_reclaim': 1.29}",,27.44,72500081.0,,,62.5,False,False,False,
+MUFG,downtrend_reversal,,"{'match': True, 'reclaim_level': 18.65, 'higher_low': 17.06, 'pct_above_reclaim': 18.18}",,22.04,70186171.0,,,61.2,False,False,False,
+CNOB,high_consolidation,,,"{'match': True, 'window_high': 33.94, 'pct_from_high': -4.92, 'vol_contraction_ratio': 0.7, 'atr_contraction_ratio': 0.77}",32.27,13322619.0,Financial Services,Banks - Regional,61.0,False,False,False,2026-10-29 08:00:00
+RJF,downtrend_reversal,,"{'match': True, 'reclaim_level': 159.81, 'higher_low': 146.12, 'pct_above_reclaim': 9.63}",,175.2,176816605.0,,,61.0,False,False,False,
+NEM,downtrend_reversal,,"{'match': True, 'reclaim_level': 96.94, 'higher_low': 88.98, 'pct_above_reclaim': 35.73}",,131.58,831345281.0,,,60.9,False,False,False,
+DLTR,high_consolidation,,,"{'match': True, 'window_high': 142.4, 'pct_from_high': -7.67, 'vol_contraction_ratio': 0.69, 'atr_contraction_ratio': 0.74}",131.48,248581600.0,,,60.8,False,False,False,
+OXY,downtrend_reversal,,"{'match': True, 'reclaim_level': 58.99, 'higher_low': 53.66, 'pct_above_reclaim': 3.92}",,61.3,478925280.0,,,60.6,False,False,False,
+TRMD,high_consolidation,,,"{'match': True, 'window_high': 34.53, 'pct_from_high': -7.9, 'vol_contraction_ratio': 0.72, 'atr_contraction_ratio': 0.76}",31.8,13644140.0,,,59.9,False,False,False,
+FOX,high_consolidation,,,"{'match': True, 'window_high': 67.81, 'pct_from_high': -9.97, 'vol_contraction_ratio': 0.43, 'atr_contraction_ratio': 0.77}",61.05,56686130.0,,,59.8,False,False,False,
+FIG,downtrend_reversal,,"{'match': True, 'reclaim_level': 25.62, 'higher_low': 23.37, 'pct_above_reclaim': 5.78}",,27.1,561287452.0,,,59.4,False,False,False,
+CVBF,downtrend_reversal,,"{'match': True, 'reclaim_level': 20.96, 'higher_low': 19.27, 'pct_above_reclaim': 7.69}",,22.57,27710177.0,Financial Services,Banks - Regional,58.8,False,False,False,2026-10-21 16:00:00
+LYB,downtrend_reversal,,"{'match': True, 'reclaim_level': 64.98, 'higher_low': 57.84, 'pct_above_reclaim': 3.92}",,67.53,282560695.0,,,58.4,False,False,False,
+JJSF,downtrend_reversal,,"{'match': True, 'reclaim_level': 80.52, 'higher_low': 71.59, 'pct_above_reclaim': 8.77}",,87.59,22252572.0,,,56.8,False,False,False,
+TARS,downtrend_reversal,,"{'match': True, 'reclaim_level': 60.44, 'higher_low': 55.24, 'pct_above_reclaim': 20.29}",,72.7,47732120.0,,,56.7,False,False,False,
+KMTS,ipo_base,"{'match': True, 'ipo_high': 26.15, 'state': 'breakout', 'pct_from_ipo_high': 3.21}",,,26.99,8292916.0,,,56.1,False,False,False,
+EBC,downtrend_reversal,,"{'match': True, 'reclaim_level': 21.33, 'higher_low': 18.98, 'pct_above_reclaim': 6.61}",,22.74,58960098.0,,,55.3,False,False,False,
+ZION,downtrend_reversal,,"{'match': True, 'reclaim_level': 63.87, 'higher_low': 58.6, 'pct_above_reclaim': 6.68}",,68.14,96402511.0,,,55.2,False,False,False,
+USB,downtrend_reversal,,"{'match': True, 'reclaim_level': 57.56, 'higher_low': 51.89, 'pct_above_reclaim': 7.81}",,62.05,408672434.0,,,54.9,False,False,False,
+BXSL,downtrend_reversal,,"{'match': True, 'reclaim_level': 24.5, 'higher_low': 22.42, 'pct_above_reclaim': 1.07}",,24.76,38806351.0,Financial Services,Asset Management,54.1,False,False,False,
+BFST,downtrend_reversal,,"{'match': True, 'reclaim_level': 29.14, 'higher_low': 26.42, 'pct_above_reclaim': 6.89}",,31.15,7552502.0,Financial Services,Banks - Regional,53.7,False,False,False,2026-10-22 16:00:00
+HWC,downtrend_reversal,,"{'match': True, 'reclaim_level': 69.68, 'higher_low': 62.85, 'pct_above_reclaim': 8.18}",,75.38,56449903.0,,,53.5,False,False,False,
+MGDDY,downtrend_reversal,,"{'match': True, 'reclaim_level': 18.45, 'higher_low': 16.91, 'pct_above_reclaim': 9.36}",,20.18,5165264.0,,,53.4,False,False,False,
+SYF,downtrend_reversal,,"{'match': True, 'reclaim_level': 74.48, 'higher_low': 68.46, 'pct_above_reclaim': 6.69}",,79.47,250450430.0,,,53.1,False,False,False,
+TOWN,downtrend_reversal,,"{'match': True, 'reclaim_level': 35.8, 'higher_low': 32.84, 'pct_above_reclaim': 5.45}",,37.75,22746931.0,,,51.9,False,False,False,
+DVN,downtrend_reversal,,"{'match': True, 'reclaim_level': 46.21, 'higher_low': 42.04, 'pct_above_reclaim': 6.25}",,49.1,497914908.0,,,51.6,False,False,False,
+ZBH,downtrend_reversal,,"{'match': True, 'reclaim_level': 93.34, 'higher_low': 83.72, 'pct_above_reclaim': 8.19}",,100.98,247091283.0,,,51.5,False,False,False,
+FULT,downtrend_reversal,,"{'match': True, 'reclaim_level': 22.31, 'higher_low': 20.34, 'pct_above_reclaim': 5.95}",,23.64,38611276.0,,,51.2,False,False,False,
+NLY,downtrend_reversal,,"{'match': True, 'reclaim_level': 22.26, 'higher_low': 20.2, 'pct_above_reclaim': 4.02}",,23.16,167168607.0,,,50.5,False,False,False,
+HOMB,downtrend_reversal,,"{'match': True, 'reclaim_level': 28.21, 'higher_low': 25.31, 'pct_above_reclaim': 7.3}",,30.27,42955784.0,,,50.1,False,False,False,
+CBRE,downtrend_reversal,,"{'match': True, 'reclaim_level': 145.48, 'higher_low': 133.07, 'pct_above_reclaim': 4.55}",,152.1,252246875.0,Real Estate,Real Estate Services,50.0,False,False,False,2026-10-22 08:00:00
+PNC,downtrend_reversal,,"{'match': True, 'reclaim_level': 228.43, 'higher_low': 208.04, 'pct_above_reclaim': 6.44}",,243.13,356284988.0,,,49.9,False,False,False,
+MTB,downtrend_reversal,,"{'match': True, 'reclaim_level': 222.18, 'higher_low': 201.44, 'pct_above_reclaim': 8.17}",,240.34,244891305.0,,,49.8,False,False,False,
+BLK,high_consolidation,,,"{'match': True, 'window_high': 1200.54, 'pct_from_high': -3.66, 'vol_contraction_ratio': 0.63, 'atr_contraction_ratio': 0.78}",1156.55,682544924.0,Financial Services,Asset Management,48.6,False,False,False,2026-10-14 08:00:00
+TMXXF,high_consolidation,,,"{'match': True, 'window_high': 41.55, 'pct_from_high': -8.19, 'vol_contraction_ratio': 0.68, 'atr_contraction_ratio': 0.71}",38.15,5813753.0,,,48.1,False,False,False,
+GRDN,ipo_base,"{'match': True, 'ipo_high': 25.74, 'state': 'breakout', 'pct_from_ipo_high': 47.39}",,,37.93,14314538.0,,,47.2,False,False,False,
+SSB,downtrend_reversal,,"{'match': True, 'reclaim_level': 99.77, 'higher_low': 90.58, 'pct_above_reclaim': 7.11}",,106.86,90456429.0,,,47.1,False,False,False,
+NVDA,downtrend_reversal,,"{'match': True, 'reclaim_level': 214.39, 'higher_low': 190.01, 'pct_above_reclaim': 0.15}",,214.72,24671416342.0,,,46.5,False,False,False,
+MDT,downtrend_reversal,,"{'match': True, 'reclaim_level': 85.99, 'higher_low': 78.97, 'pct_above_reclaim': 8.56}",,93.35,635561385.0,,,46.4,False,False,False,
+CURB,ipo_base,"{'match': True, 'ipo_high': 24.06, 'state': 'breakout', 'pct_from_ipo_high': 22.14}",,,29.39,41718056.0,Real Estate,REIT - Retail,45.9,False,False,False,2026-10-27 08:00:00
+GIB,downtrend_reversal,,"{'match': True, 'reclaim_level': 68.68, 'higher_low': 63.05, 'pct_above_reclaim': 9.18}",,74.98,35738170.0,,,44.6,False,False,False,
+ATLKY,high_consolidation,,,"{'match': True, 'window_high': 22.42, 'pct_from_high': -3.26, 'vol_contraction_ratio': 0.64, 'atr_contraction_ratio': 0.78}",21.69,8134246.0,Industrials,Specialty Industrial Machinery,44.4,False,False,False,
+RF,downtrend_reversal,,"{'match': True, 'reclaim_level': 28.46, 'higher_low': 25.91, 'pct_above_reclaim': 6.86}",,30.41,238054982.0,,,44.3,False,False,False,
+HFWA,downtrend_reversal,,"{'match': True, 'reclaim_level': 28.29, 'higher_low': 25.63, 'pct_above_reclaim': 2.88}",,29.1,10742763.0,,,44.0,False,False,False,
+BSAC,downtrend_reversal,,"{'match': True, 'reclaim_level': 32.63, 'higher_low': 29.6, 'pct_above_reclaim': 7.75}",,35.16,9633557.0,Financial Services,Banks - Regional,43.7,False,False,False,2026-10-29 08:00:00
+EL,downtrend_reversal,,"{'match': True, 'reclaim_level': 87.23, 'higher_low': 78.66, 'pct_above_reclaim': 16.86}",,101.94,299880139.0,,,43.4,False,False,False,
+UCB,downtrend_reversal,,"{'match': True, 'reclaim_level': 34.82, 'higher_low': 31.61, 'pct_above_reclaim': 2.19}",,35.58,30469409.0,,,42.8,False,False,False,
+SFBS,downtrend_reversal,,"{'match': True, 'reclaim_level': 40.43, 'higher_low': 37.07, 'pct_above_reclaim': 7.2}",,43.34,19634923.0,,,42.7,False,False,False,
+SMA,ipo_base,"{'match': True, 'ipo_high': 35.72, 'state': 'consolidating', 'pct_from_ipo_high': -4.23}",,,34.21,21579216.0,,,42.3,False,False,False,
+BBT,downtrend_reversal,,"{'match': True, 'reclaim_level': 31.06, 'higher_low': 28.17, 'pct_above_reclaim': 1.91}",,31.65,26586838.0,Financial Services,Banks - Regional,42.2,False,False,False,2026-10-28 16:00:00
+IBN,"downtrend_reversal, high_consolidation",,"{'match': True, 'reclaim_level': 29.16, 'higher_low': 24.96, 'pct_above_reclaim': 2.59}","{'match': True, 'window_high': 33.07, 'pct_from_high': -9.56, 'vol_contraction_ratio': 0.57, 'atr_contraction_ratio': 0.8}",29.91,155212249.0,,,42.0,False,False,False,
+FBK,downtrend_reversal,,"{'match': True, 'reclaim_level': 56.34, 'higher_low': 50.62, 'pct_above_reclaim': 4.09}",,58.65,18760378.0,,,41.5,False,False,False,
+RHHBY,downtrend_reversal,,"{'match': True, 'reclaim_level': 53.54, 'higher_low': 48.1, 'pct_above_reclaim': 8.52}",,58.1,123878147.0,,,41.2,False,False,False,
+BAESY,downtrend_reversal,,"{'match': True, 'reclaim_level': 108.7, 'higher_low': 97.51, 'pct_above_reclaim': 6.86}",,116.16,21659099.0,Industrials,Aerospace & Defense,39.8,False,False,False,2027-02-17 15:00:00
+COIN,downtrend_reversal,,"{'match': True, 'reclaim_level': 153.68, 'higher_low': 141.03, 'pct_above_reclaim': 21.35}",,186.49,1494061900.0,Financial Services,Financial Data & Stock Exchanges,39.1,False,False,False,2026-10-29 16:00:00
+GILD,downtrend_reversal,,"{'match': True, 'reclaim_level': 140.61, 'higher_low': 127.61, 'pct_above_reclaim': 3.92}",,146.12,912698386.0,,,38.8,False,False,False,
+ECG,ipo_base,"{'match': True, 'ipo_high': 77.93, 'state': 'breakout', 'pct_from_ipo_high': 61.63}",,,125.96,81309500.0,,,37.8,False,False,False,
+COO,downtrend_reversal,,"{'match': True, 'reclaim_level': 74.45, 'higher_low': 68.37, 'pct_above_reclaim': 2.38}",,76.22,136325668.0,Healthcare,Medical Instruments & Supplies,37.0,False,True,False,2026-09-09 16:00:00
+PTC,downtrend_reversal,,"{'match': True, 'reclaim_level': 122.15, 'higher_low': 112.01, 'pct_above_reclaim': 26.63}",,154.68,204585915.0,,,35.6,False,False,False,
+RDDT,ipo_base,"{'match': True, 'ipo_high': 74.9, 'state': 'breakout', 'pct_from_ipo_high': 104.66}",,,153.29,1468592735.0,,,35.4,False,False,False,
+MGY,downtrend_reversal,,"{'match': True, 'reclaim_level': 25.64, 'higher_low': 23.48, 'pct_above_reclaim': 9.73}",,28.14,99583073.0,,,34.7,False,False,False,
+BAH,downtrend_reversal,,"{'match': True, 'reclaim_level': 75.63, 'higher_low': 65.38, 'pct_above_reclaim': 1.88}",,77.05,148262581.0,Industrials,Consulting Services,34.6,False,False,False,2026-10-23 08:00:00
+SLB,downtrend_reversal,,"{'match': True, 'reclaim_level': 53.2, 'higher_low': 48.3, 'pct_above_reclaim': 1.26}",,53.87,522322565.0,,,34.5,False,False,False,
+TFC,high_consolidation,,,"{'match': True, 'window_high': 54.52, 'pct_from_high': -7.51, 'vol_contraction_ratio': 0.66, 'atr_contraction_ratio': 0.75}",50.42,334714444.0,,,34.1,False,False,False,
+JOE,downtrend_reversal,,"{'match': True, 'reclaim_level': 66.06, 'higher_low': 60.27, 'pct_above_reclaim': 4.29}",,68.89,13510507.0,,,33.8,False,False,False,
+SDRL,downtrend_reversal,,"{'match': True, 'reclaim_level': 45.38, 'higher_low': 41.37, 'pct_above_reclaim': 4.21}",,47.29,31499340.0,,,32.1,False,False,False,
+TDY,high_consolidation,,,"{'match': True, 'window_high': 697.67, 'pct_from_high': -8.82, 'vol_contraction_ratio': 0.7, 'atr_contraction_ratio': 0.79}",636.15,217216761.0,,,28.3,False,False,False,
+GMED,downtrend_reversal,,"{'match': True, 'reclaim_level': 81.74, 'higher_low': 74.51, 'pct_above_reclaim': 6.32}",,86.91,117018743.0,,,27.7,False,False,False,
+NE,downtrend_reversal,,"{'match': True, 'reclaim_level': 44.12, 'higher_low': 39.02, 'pct_above_reclaim': 4.87}",,46.27,62407331.0,,,26.6,False,False,False,
+TXNM,high_consolidation,,,"{'match': True, 'window_high': 59.1, 'pct_from_high': -3.17, 'vol_contraction_ratio': 0.56, 'atr_contraction_ratio': 0.58}",57.22,48152899.0,,,26.2,False,False,False,
+RCI,downtrend_reversal,,"{'match': True, 'reclaim_level': 35.16, 'higher_low': 32.26, 'pct_above_reclaim': 3.16}",,36.27,42923145.0,,,25.9,False,False,False,
+LIF,ipo_base,"{'match': True, 'ipo_high': 41.17, 'state': 'breakout', 'pct_from_ipo_high': 8.48}",,,44.66,55927737.0,,,25.7,False,False,False,
+TCBI,high_consolidation,,,"{'match': True, 'window_high': 108.7, 'pct_from_high': -9.57, 'vol_contraction_ratio': 0.75, 'atr_contraction_ratio': 0.74}",98.3,40281845.0,,,22.8,False,False,False,
+ALMS,ipo_base,"{'match': True, 'ipo_high': 13.53, 'state': 'breakout', 'pct_from_ipo_high': 78.64}",,,24.17,23995442.0,Healthcare,Biotechnology,21.7,False,True,False,2026-11-12 15:00:00
+ROOT,downtrend_reversal,,"{'match': True, 'reclaim_level': 53.83, 'higher_low': 48.0, 'pct_above_reclaim': 3.63}",,55.79,16853938.0,,,18.8,False,False,False,
+DAN,downtrend_reversal,,"{'match': True, 'reclaim_level': 30.31, 'higher_low': 27.59, 'pct_above_reclaim': 4.66}",,31.72,43153299.0,,,18.6,False,False,False,
+GLOB,downtrend_reversal,,"{'match': True, 'reclaim_level': 39.29, 'higher_low': 36.13, 'pct_above_reclaim': 0.84}",,39.62,80286999.0,,,14.4,False,False,False,
+HSY,downtrend_reversal,,"{'match': True, 'reclaim_level': 182.13, 'higher_low': 167.43, 'pct_above_reclaim': 2.38}",,186.46,260733562.0,,,14.1,False,False,False,
+MTSUY,ipo_base,"{'match': True, 'ipo_high': 21.3, 'state': 'breakout', 'pct_from_ipo_high': 41.57}",,,30.16,7322869.0,,,13.8,False,False,False,
+UHS,downtrend_reversal,,"{'match': True, 'reclaim_level': 162.13, 'higher_low': 142.38, 'pct_above_reclaim': 9.33}",,177.26,153043452.0,,,13.3,False,False,False,
+CCJ,downtrend_reversal,,"{'match': True, 'reclaim_level': 92.06, 'higher_low': 83.5, 'pct_above_reclaim': 11.35}",,102.51,278224832.0,Energy,Uranium,13.0,False,False,False,2026-10-30 08:00:00
+MAZE,"ipo_base, downtrend_reversal","{'match': True, 'ipo_high': 17.0, 'state': 'breakout', 'pct_from_ipo_high': 73.12}","{'match': True, 'reclaim_level': 28.92, 'higher_low': 26.53, 'pct_above_reclaim': 1.76}",,29.43,10148540.0,,,8.3,False,False,False,
+BKV,ipo_base,"{'match': True, 'ipo_high': 24.03, 'state': 'breakout', 'pct_from_ipo_high': 0.71}",,,24.2,25769187.0,Energy,Oil & Gas E&P,4.8,False,False,False,2026-11-10 07:00:00
+IONS,downtrend_reversal,,"{'match': True, 'reclaim_level': 57.48, 'higher_low': 51.28, 'pct_above_reclaim': 3.93}",,59.74,138138214.0,,,2.4,False,False,False,
