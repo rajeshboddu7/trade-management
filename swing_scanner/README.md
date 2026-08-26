@@ -17,11 +17,12 @@ close**.
    10% of its high, average volume contracting, and daily range (ATR%)
    contracting — the classic low-volatility pause near highs.
 4. **Trend continuation breakout** — price above its 50-day average, which
-   is above its 150-day average (established uptrend), making a fresh
-   ~20-day high with volume that ISN'T drying up (the inverse of pattern
-   3's volume-contraction test), and not already overextended (>60%) above
-   its 50-day average. This is the mirror image of pattern 3: an active
-   breakout rather than a quiet base near highs.
+   is at least 3% above its 150-day average (a decisive uptrend, not a bare
+   crossover), within 3% of a fresh ~20-day high, with volume that ISN'T
+   drying up (the inverse of pattern 3's volume-contraction test), and not
+   already overextended (>60%) above its 50-day average. This is the mirror
+   image of pattern 3: an active breakout rather than a quiet base near
+   highs.
 
 Every match is also tagged with:
 - Relative strength percentile vs SPY (3mo/6mo blend)

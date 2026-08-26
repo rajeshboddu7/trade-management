@@ -38,8 +38,11 @@ ATR_CONTRACTION_RATIO = 0.80         # short ATR% must be below this * long ATR%
 # --- Pattern 4: trend continuation breakout (rising volume) ----------------
 TREND_SMA_FAST = 50                  # price must be above this...
 TREND_SMA_SLOW = 150                 # ...which must be above this (uptrend structure)
+TREND_MIN_MA_SEPARATION_PCT = 0.03   # ...by at least 3%, not just a bare crossover -- a decisive
+                                      # trend, not an early/choppy one still sorting itself out
 TREND_NEW_HIGH_WINDOW = 20           # "fresh high" lookback, in trading days
-TREND_NEAR_NHIGH_PCT = 0.05          # within 5% of that window's high counts as "making it"
+TREND_NEAR_NHIGH_PCT = 0.03          # within 3% of that window's high counts as "making it" --
+                                      # actively at a fresh high, not one set a week or two ago
 TREND_VOL_SHORT_WINDOW = 10
 TREND_VOL_LONG_WINDOW = 50
 TREND_VOL_EXPANSION_RATIO = 0.80     # short avg vol must be >= this * long avg vol -- i.e. NOT

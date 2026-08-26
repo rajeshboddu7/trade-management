@@ -233,7 +233,7 @@ def detect_trend_continuation(df: pd.DataFrame) -> dict:
 
     if pd.isna(sma_fast) or pd.isna(sma_slow):
         return no_match
-    if not (last_close > sma_fast > sma_slow):
+    if not (last_close > sma_fast > sma_slow * (1 + config.TREND_MIN_MA_SEPARATION_PCT)):
         return no_match
 
     # Overextension guard: don't chase a move that's already run too far above its own trend.
