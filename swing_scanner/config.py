@@ -35,6 +35,22 @@ ATR_SHORT_WINDOW = 10
 ATR_LONG_WINDOW = 50
 ATR_CONTRACTION_RATIO = 0.80         # short ATR% must be below this * long ATR%
 
+# --- Pattern 4: trend continuation breakout (rising volume) ----------------
+TREND_SMA_FAST = 50                  # price must be above this...
+TREND_SMA_SLOW = 150                 # ...which must be above this (uptrend structure)
+TREND_NEW_HIGH_WINDOW = 20           # "fresh high" lookback, in trading days
+TREND_NEAR_NHIGH_PCT = 0.05          # within 5% of that window's high counts as "making it"
+TREND_VOL_SHORT_WINDOW = 10
+TREND_VOL_LONG_WINDOW = 50
+TREND_VOL_EXPANSION_RATIO = 0.80     # short avg vol must be >= this * long avg vol -- i.e. NOT
+                                      # in pattern 3's dry-up regime (ratio < 0.75). Calibrated
+                                      # against real movers: by the time a stock is up double
+                                      # digits over more than a few days, its breakout-day volume
+                                      # spike has usually already faded back toward baseline, so
+                                      # "not contracting" is a more realistic bar than "still
+                                      # actively expanding".
+TREND_MAX_EXT_ABOVE_MA50_PCT = 0.60  # don't chase a move already >60% above its 50-day MA
+
 # --- Relative strength / leadership ----------------------------------------
 RS_LOOKBACK_3M = 63                  # trading days (~3 months)
 RS_LOOKBACK_6M = 126                 # trading days (~6 months)

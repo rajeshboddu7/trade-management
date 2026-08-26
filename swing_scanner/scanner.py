@@ -83,6 +83,7 @@ def run_scan(universe_path: str) -> pd.DataFrame:
         p1 = patterns.detect_ipo_base(df)
         p2 = patterns.detect_downtrend_reversal(df)
         p3 = patterns.detect_high_consolidation(df)
+        p4 = patterns.detect_trend_continuation(df)
 
         matched = [
             name
@@ -90,6 +91,7 @@ def run_scan(universe_path: str) -> pd.DataFrame:
                 ("ipo_base", p1),
                 ("downtrend_reversal", p2),
                 ("high_consolidation", p3),
+                ("trend_continuation", p4),
             )
             if res["match"]
         ]
@@ -112,6 +114,7 @@ def run_scan(universe_path: str) -> pd.DataFrame:
                 "ipo_base_detail": p1 if p1["match"] else "",
                 "downtrend_reversal_detail": p2 if p2["match"] else "",
                 "high_consolidation_detail": p3 if p3["match"] else "",
+                "trend_continuation_detail": p4 if p4["match"] else "",
                 "last_close": round(float(df["Close"].iloc[-1]), 2),
                 "avg_dollar_vol_20d": round(avg_dollar_volume(df), 0),
                 "sector": sectors.get(ticker),
@@ -189,6 +192,7 @@ def main():
             "ipo_base": "IPO-high breakout/consolidation",
             "downtrend_reversal": "Downtrend reversal",
             "high_consolidation": "52w/ATH consolidation (vol dry-up)",
+            "trend_continuation": "Trend continuation breakout",
         }
         for key, label in pattern_labels.items():
             group = out_df[out_df["patterns"].str.contains(key)]

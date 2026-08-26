@@ -1031,6 +1031,7 @@ const SCAN_PATTERN_GROUPS = [
   { key: 'ipo_base', bodyId: '#scanBodyIpoBase', emptyId: '#scanEmptyIpoBase' },
   { key: 'downtrend_reversal', bodyId: '#scanBodyDowntrendReversal', emptyId: '#scanEmptyDowntrendReversal' },
   { key: 'high_consolidation', bodyId: '#scanBodyHighConsolidation', emptyId: '#scanEmptyHighConsolidation' },
+  { key: 'trend_continuation', bodyId: '#scanBodyTrendContinuation', emptyId: '#scanEmptyTrendContinuation' },
 ];
 
 function scanMatchRow(m, groupId, collapsed) {

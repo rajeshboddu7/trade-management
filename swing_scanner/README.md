@@ -1,6 +1,6 @@
 # Swing Scanner
 
-Screens a ticker universe for three technical setups, ranks results by
+Screens a ticker universe for four technical setups, ranks results by
 relative strength / sector-theme leadership, and writes a CSV report.
 Built to be run twice a week: **Friday after close** and **Tuesday after
 close**.
@@ -16,6 +16,12 @@ close**.
 3. **52-week/all-time-high consolidation with volume dry-up** — price within
    10% of its high, average volume contracting, and daily range (ATR%)
    contracting — the classic low-volatility pause near highs.
+4. **Trend continuation breakout** — price above its 50-day average, which
+   is above its 150-day average (established uptrend), making a fresh
+   ~20-day high with volume that ISN'T drying up (the inverse of pattern
+   3's volume-contraction test), and not already overextended (>60%) above
+   its 50-day average. This is the mirror image of pattern 3: an active
+   breakout rather than a quiet base near highs.
 
 Every match is also tagged with:
 - Relative strength percentile vs SPY (3mo/6mo blend)

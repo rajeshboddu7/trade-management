@@ -209,3 +209,55 @@ def detect_high_consolidation(df: pd.DataFrame) -> dict:
         "vol_contraction_ratio": round(float(vol_short / vol_long), 2),
         "atr_contraction_ratio": round(float(atr_short / atr_long), 2),
     }
+
+
+# ---------------------------------------------------------------------------
+# Pattern 4: trend continuation breakout
+# ---------------------------------------------------------------------------
+# The mirror image of pattern 3: an established uptrend pushing to fresh
+# highs with volume that ISN'T drying up, rather than a quiet base near old
+# highs. Calibrated against real movers rather than guessed thresholds --
+# volume typically normalizes back toward baseline within days of a breakout,
+# so this checks for "not contracting" (the inverse of pattern 3's dry-up
+# test), not "still actively expanding".
+
+def detect_trend_continuation(df: pd.DataFrame) -> dict:
+    no_match = {"match": False}
+
+    if len(df) < config.TREND_SMA_SLOW:
+        return no_match
+
+    sma_fast = df["Close"].rolling(config.TREND_SMA_FAST).mean().iloc[-1]
+    sma_slow = df["Close"].rolling(config.TREND_SMA_SLOW).mean().iloc[-1]
+    last_close = df["Close"].iloc[-1]
+
+    if pd.isna(sma_fast) or pd.isna(sma_slow):
+        return no_match
+    if not (last_close > sma_fast > sma_slow):
+        return no_match
+
+    # Overextension guard: don't chase a move that's already run too far above its own trend.
+    if last_close > sma_fast * (1 + config.TREND_MAX_EXT_ABOVE_MA50_PCT):
+        return no_match
+
+    window = df["High"].iloc[-config.TREND_NEW_HIGH_WINDOW:]
+    window_high = window.max()
+    if last_close < window_high * (1 - config.TREND_NEAR_NHIGH_PCT):
+        return no_match
+
+    vol_short = df["Volume"].rolling(config.TREND_VOL_SHORT_WINDOW).mean().iloc[-1]
+    vol_long = df["Volume"].rolling(config.TREND_VOL_LONG_WINDOW).mean().iloc[-1]
+    if pd.isna(vol_short) or pd.isna(vol_long) or vol_long == 0:
+        return no_match
+    vol_ratio = vol_short / vol_long
+    if vol_ratio < config.TREND_VOL_EXPANSION_RATIO:
+        return no_match
+
+    return {
+        "match": True,
+        "sma_fast": round(float(sma_fast), 2),
+        "sma_slow": round(float(sma_slow), 2),
+        "pct_above_sma_fast": round(float(last_close / sma_fast - 1) * 100, 2),
+        "window_high": round(float(window_high), 2),
+        "vol_expansion_ratio": round(float(vol_ratio), 2),
+    }
