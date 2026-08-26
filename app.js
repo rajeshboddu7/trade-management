@@ -1097,9 +1097,10 @@ function renderScanner() {
     <div class="stat"><div class="stat-label">Universe file</div>
       <div class="stat-value" style="font-size:16px">${scannerData ? esc(scannerData.universeFile || '—') : '—'}</div></div>`;
 
-  $('#scanGeneratedAt').textContent = scannerData && scannerData.generatedAt
-    ? `— last run ${new Date(scannerData.generatedAt).toLocaleString()}`
+  const lastRunText = scannerData && scannerData.generatedAt
+    ? `Last run: ${new Date(scannerData.generatedAt).toLocaleString()}`
     : '';
+  document.querySelectorAll('.scan-last-run').forEach(el => { el.textContent = lastRunText; });
 
   $('#scanEmpty').hidden = matches.length > 0;
 

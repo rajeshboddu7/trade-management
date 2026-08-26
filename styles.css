@@ -244,6 +244,8 @@ main { padding: 20px; max-width: 1500px; margin: 0 auto; }
 .scan-pattern-panel[open] > summary::before { transform: rotate(90deg); }
 .scan-pattern-panel > summary h3 { margin: 0; }
 .scan-pattern-panel > summary:hover h3 { color: var(--text); }
+.scan-last-run { padding-top: 10px; text-align: right; color: var(--muted); font-size: 12px; }
+.scan-last-run:empty { display: none; }
 
 /* ---------- positions ---------- */
 .pos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 20px; }
