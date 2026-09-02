@@ -389,14 +389,27 @@ function renderDayPanel() {
 }
 
 /* ---- trades table ---- */
+/** Keeps the "All symbols" dropdown in sync with whatever's actually in `trades`, preserving
+ *  the current selection if it's still a valid option (e.g. after adding/deleting a trade). */
+function populateSymbolFilter() {
+  const sel = $('#fSymbol');
+  const symbols = Array.from(new Set(trades.map(t => t.symbol))).sort();
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All symbols</option>' +
+    symbols.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  if (symbols.includes(current)) sel.value = current;
+}
+
 function filteredTrades() {
   const q = $('#fSearch').value.trim().toLowerCase();
   const from = $('#fFrom').value, to = $('#fTo').value;
+  const symbol = $('#fSymbol').value;
   const side = $('#fSide').value, result = $('#fResult').value, platform = $('#fPlatform').value;
 
   return trades.map(withDerived).filter(t => {
     if (from && t.date < from) return false;
     if (to && t.date > to) return false;
+    if (symbol && t.symbol !== symbol) return false;
     if (side && t.side !== side) return false;
     if (platform && t.platform !== platform) return false;
     if (result === 'open' && t.pnl != null) return false;
@@ -595,6 +608,7 @@ function tradeRow(t, hidden) {
 }
 
 function renderTrades() {
+  populateSymbolFilter();
   const list = filteredTrades();
   $('#tradesEmpty').hidden = list.length > 0;
 
@@ -1781,10 +1795,10 @@ $('#tradeTable').addEventListener('click', e => {
   sortKey = k;
   renderTrades();
 });
-['#fSearch', '#fFrom', '#fTo', '#fSide', '#fResult', '#fPlatform'].forEach(sel =>
+['#fSearch', '#fFrom', '#fTo', '#fSymbol', '#fSide', '#fResult', '#fPlatform'].forEach(sel =>
   $(sel).addEventListener('input', renderTrades));
 $('#clearFilters').addEventListener('click', () => {
-  ['#fSearch', '#fFrom', '#fTo', '#fSide', '#fResult', '#fPlatform'].forEach(sel => { $(sel).value = ''; });
+  ['#fSearch', '#fFrom', '#fTo', '#fSymbol', '#fSide', '#fResult', '#fPlatform'].forEach(sel => { $(sel).value = ''; });
   renderTrades();
 });
 $('#refreshPricesBtn').addEventListener('click', () => {
