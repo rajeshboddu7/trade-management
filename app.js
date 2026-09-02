@@ -567,11 +567,14 @@ function realizedPctCell(t) {
   return `<b class="${cls(pct)}">${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%</b>`;
 }
 
-function renderTrades() {
-  const list = filteredTrades();
-  $('#tradesEmpty').hidden = list.length > 0;
-  $('#tradeBody').innerHTML = list.map(t => `
-    <tr data-id="${t.id}">
+/** Collapsed by default -- closed trades only pile up over time and open trades are what matter
+ *  day to day. In-memory only (resets on reload), same lightweight approach as the Scanner tab's
+ *  industry-group collapse. */
+let closedTradesCollapsed = true;
+
+function tradeRow(t, hidden) {
+  return `
+    <tr data-id="${t.id}"${hidden ? ' hidden' : ''}>
       <td class="mono">${t.date}</td>
       <td><b>${esc(t.symbol)}</b>${symbolStopFlagDot(t)}</td>
       <td><span class="pill ${t.side}">${t.side}</span></td>
@@ -588,7 +591,25 @@ function renderTrades() {
       <td class="num ${t.rmultiple == null ? '' : cls(t.rmultiple)}">${
         t.rmultiple == null ? '—' : (t.rmultiple >= 0 ? '+' : '') + t.rmultiple.toFixed(2)}</td>
       <td><button class="row-del" data-del="${t.id}" title="Delete">✕</button></td>
-    </tr>`).join('');
+    </tr>`;
+}
+
+function renderTrades() {
+  const list = filteredTrades();
+  $('#tradesEmpty').hidden = list.length > 0;
+
+  const open = list.filter(t => t.pnl == null);
+  const closed = list.filter(t => t.pnl != null);
+
+  const closedHeader = closed.length ? `
+    <tr class="scan-group-head trades-closed-head${closedTradesCollapsed ? ' collapsed' : ''}">
+      <td colspan="14"><span class="scan-group-chevron">▸</span>Closed trades <span class="scan-group-count">${closed.length}</span></td>
+    </tr>` : '';
+
+  $('#tradeBody').innerHTML =
+    open.map(t => tradeRow(t, false)).join('') +
+    closedHeader +
+    closed.map(t => tradeRow(t, closedTradesCollapsed)).join('');
 }
 
 /* ---- positions ---- */
@@ -1729,6 +1750,13 @@ $('#view-scanner').addEventListener('click', e => {
   const gid = head.dataset.group;
   if (collapsedScanGroups.has(gid)) collapsedScanGroups.delete(gid); else collapsedScanGroups.add(gid);
   renderScanner();
+});
+
+// trades — click the "Closed trades" header to collapse/expand that whole section
+$('#view-trades').addEventListener('click', e => {
+  if (!e.target.closest('.trades-closed-head')) return;
+  closedTradesCollapsed = !closedTradesCollapsed;
+  renderTrades();
 });
 
 // table
