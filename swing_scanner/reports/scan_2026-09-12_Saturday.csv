@@ -1,0 +1,3 @@
+ticker,patterns,ipo_base_detail,downtrend_reversal_detail,high_consolidation_detail,trend_continuation_detail,last_close,avg_dollar_vol_20d,sector,industry,rs_percentile,sector_leader,leading_theme,earnings_within_14d,earnings_date
+APGE,high_consolidation,,,"{'match': True, 'window_high': 134.32, 'pct_from_high': -0.27, 'vol_contraction_ratio': 0.47, 'atr_contraction_ratio': 0.37}",,133.96,809213512.0,Healthcare,Biotechnology,,True,True,False,2026-11-09 07:00:00
+SHEL,trend_continuation,,,,"{'match': True, 'sma_fast': 88.67, 'sma_slow': 85.81, 'pct_above_sma_fast': 9.14, 'window_high': 96.99, 'vol_expansion_ratio': 1.13}",96.77,585988508.0,,,,False,False,False,
