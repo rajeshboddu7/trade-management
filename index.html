@@ -344,14 +344,29 @@
         <label>Entry date <input type="date" name="date" required></label>
         <label>Symbol <input name="symbol" placeholder="NIFTY, AAPL…" required autocomplete="off"></label>
       </div>
-      <div class="grid2">
+      <div class="grid3">
+        <label>Trade type
+          <select name="tradeType" id="tradeTypeSelect">
+            <option value="stock">Stock</option>
+            <option value="options">Options</option>
+          </select>
+        </label>
         <label>Side
-          <select name="side">
+          <select name="side" id="sideSelect">
             <option value="long">Long</option>
             <option value="short">Short</option>
           </select>
         </label>
-        <label>Quantity <input type="number" name="qty" step="any" min="0" value="1" required></label>
+        <label id="qtyLabel">Quantity <input type="number" name="qty" step="any" min="0" value="1" required></label>
+      </div>
+      <div class="grid2" id="optionFieldsWrap" hidden>
+        <label>Option type
+          <select name="optionType">
+            <option value="call">Call</option>
+            <option value="put">Put</option>
+          </select>
+        </label>
+        <label>Expiry date <input type="date" name="expiry"></label>
       </div>
       <label>Platform
         <select name="platform">

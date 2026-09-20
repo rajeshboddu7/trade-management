@@ -8,7 +8,7 @@
 const {
   CURRENCY, ymd, parseYmd, daysBetween, tradingDaysBetween,
   fmtMoney, fmtNum, cls,
-  isOpenTrade, pnlOf, rOf, daysInTrade, computeDefaultStop, calcUnrealized,
+  isOpenTrade, pnlOf, rOf, contractMultiplier, daysInTrade, computeDefaultStop, calcUnrealized,
   sortedEvents, derivePosition, isPositionTrade, trimToTrade, migratePositionId,
   mergeById,
 } = window.TradeMath;
@@ -371,7 +371,7 @@ function renderDayPanel() {
       ${list.length ? list.map(t => `
         <div class="dp-trade" data-id="${t.id}">
           <div class="dp-row1">
-            <span><span class="dp-sym">${esc(t.symbol)}</span> <span class="pill ${t.side}">${t.side}</span></span>
+            <span><span class="dp-sym">${esc(t.symbol)}</span>${optionBadge(t)} <span class="pill ${t.side}">${sideLabel(t)}</span></span>
             ${t.pnl == null ? `<span class="pill">Open</span>` :
               `<span class="dp-pnl ${cls(t.pnl)}">${fmtMoney(t.pnl, { sign: true })}</span>`}
           </div>
@@ -585,12 +585,19 @@ function realizedPctCell(t) {
  *  industry-group collapse. */
 let closedTradesCollapsed = true;
 
+/** "CALL"/"PUT" badge next to the symbol for an options trade, with expiry in the tooltip. */
+function optionBadge(t) {
+  if (t.tradeType !== 'options') return '';
+  const label = t.optionType === 'put' ? 'PUT' : 'CALL';
+  return ` <span class="pill" title="${t.expiry ? `Expires ${esc(t.expiry)}` : 'Options trade'}">${label}</span>`;
+}
+
 function tradeRow(t, hidden) {
   return `
     <tr data-id="${t.id}"${hidden ? ' hidden' : ''}>
       <td class="mono">${t.date}</td>
-      <td><b>${esc(t.symbol)}</b>${symbolStopFlagDot(t)}</td>
-      <td><span class="pill ${t.side}">${t.side}</span></td>
+      <td><b>${esc(t.symbol)}</b>${symbolStopFlagDot(t)}${optionBadge(t)}</td>
+      <td><span class="pill ${t.side}">${sideLabel(t)}</span></td>
       <td>${t.platform ? `<span class="pill">${platformLabel(t.platform)}</span>` : '—'}</td>
       <td class="num">${fmtNum(t.qty)}</td>
       <td class="num">${fmtNum(t.entry)}</td>
@@ -1352,6 +1359,28 @@ function syncDefaultStop() {
   if (def != null) f.elements.stop.value = def.toFixed(2);
 }
 
+/** Options traders say "Buy"/"Sell", not "Long"/"Short" -- the underlying side value (long/short)
+ *  and its P/L-direction meaning are unchanged, only the label shown in the dropdown/table. */
+const SIDE_LABELS = {
+  stock: { long: 'Long', short: 'Short' },
+  options: { long: 'Buy', short: 'Sell' },
+};
+function sideLabel(t) {
+  return (SIDE_LABELS[t.tradeType === 'options' ? 'options' : 'stock'])[t.side] || t.side;
+}
+
+/** Shows/hides the Option type + Expiry fields and relabels Side for the current Trade type,
+ *  clearing option-only fields when switching back to Stock so no stale data gets saved. */
+function syncOptionFieldsVisibility() {
+  const f = $('#tradeForm');
+  const isOptions = f.elements.tradeType.value === 'options';
+  $('#optionFieldsWrap').hidden = !isOptions;
+  const labels = SIDE_LABELS[isOptions ? 'options' : 'stock'];
+  for (const opt of f.elements.side.options) opt.textContent = labels[opt.value];
+  $('#qtyLabel').firstChild.textContent = isOptions ? 'Quantity (contracts) ' : 'Quantity ';
+  if (!isOptions) { f.elements.optionType.value = 'call'; f.elements.expiry.value = ''; }
+}
+
 function openDialog(trade, presetDate) {
   const f = $('#tradeForm');
   f.reset();
@@ -1363,6 +1392,7 @@ function openDialog(trade, presetDate) {
     for (const [k, v] of Object.entries(trade)) {
       if (f.elements[k]) f.elements[k].value = v ?? '';
     }
+    syncOptionFieldsVisibility();
     if (trade.stop != null && trade.stop !== '') {
       // Only treat the stop as deliberately customized if it actually differs from what the 5%
       // default would compute right now — a stop that's just never been anything but the auto
@@ -1377,6 +1407,7 @@ function openDialog(trade, presetDate) {
     f.elements.id.value = '';
     f.elements.date.value = presetDate || ymd(new Date());
     f.elements.qty.value = 1;
+    syncOptionFieldsVisibility();
   }
   syncDefaultStop();
   updateCalc();
@@ -1389,11 +1420,15 @@ function readForm() {
   const f = $('#tradeForm');
   const g = n => f.elements[n].value.trim();
   const num = n => { const v = parseFloat(f.elements[n].value); return isFinite(v) ? v : null; };
+  const tradeType = g('tradeType') || 'stock';
   return {
     id: g('id') || uid(),
     date: g('date'),
     symbol: g('symbol').toUpperCase(),
     side: g('side'),
+    tradeType,
+    optionType: tradeType === 'options' ? g('optionType') : null,
+    expiry: tradeType === 'options' ? (g('expiry') || null) : null,
     qty: num('qty') ?? 0,
     entry: num('entry') ?? 0,
     exit: num('exit'),
@@ -1410,7 +1445,7 @@ function updateCalc() {
   const t = readForm();
   const pnl = pnlOf(t);
   const r = rOf(t);
-  const invested = t.entry * t.qty;
+  const invested = t.entry * t.qty * contractMultiplier(t);
   const pct = (invested && pnl != null) ? (pnl / invested) * 100 : null;
   $('#calcPreview').innerHTML = `
     <span><i>Net P/L</i><b class="${pnl == null ? '' : cls(pnl)}">${pnl == null ? 'Open' : fmtMoney(pnl, { sign: true })}</b></span>
@@ -1424,6 +1459,7 @@ function closeDialog() { dlg.close(); }
 $('#tradeForm').addEventListener('input', e => {
   if (e.target.name === 'stop') $('#tradeForm').dataset.stopTouched = '1';
   else if (e.target.name === 'entry' || e.target.name === 'side') syncDefaultStop();
+  else if (e.target.name === 'tradeType') syncOptionFieldsVisibility();
   updateCalc();
 });
 $('#tradeForm').addEventListener('submit', e => {

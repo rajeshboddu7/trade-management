@@ -75,6 +75,17 @@ close(T.rOf({ side: 'long', entry: 10, exit: 20, qty: 5, stop: 8, fees: 0 }), 5,
 eq(T.rOf({ side: 'long', entry: 10, exit: 15, qty: 1, stop: null, fees: 0 }), null, 'rOf null with no stop');
 eq(T.rOf({ side: 'long', entry: 10, exit: null, qty: 1, stop: 8, fees: 0 }), null, 'rOf null while open');
 
+group('trade math: options contract multiplier (100 shares/contract)');
+eq(T.contractMultiplier({ tradeType: 'options' }), 100, 'contractMultiplier 100x for options');
+eq(T.contractMultiplier({ tradeType: 'stock' }), 1, 'contractMultiplier 1x for stock');
+eq(T.contractMultiplier({}), 1, 'contractMultiplier 1x when tradeType is absent (legacy trades)');
+close(T.pnlOf({ tradeType: 'options', side: 'long', entry: 2, exit: 3, qty: 2, fees: 0 }), 200,
+  'pnlOf options: (3-2) * 2 contracts * 100 = 200, not 2');
+close(T.pnlOf({ tradeType: 'options', side: 'short', entry: 3, exit: 1, qty: 1, fees: 0 }), 200,
+  'pnlOf options short (sell to open): (3-1) * 1 * 100 = 200');
+close(T.rOf({ tradeType: 'options', side: 'long', entry: 2, exit: 4, qty: 1, stop: 1, fees: 0 }), 2,
+  'rOf options: 200 pnl / (|2-1|*1*100=100 risk) = 2R');
+
 group('trade math: default stop (5%, side-aware)');
 close(T.computeDefaultStop(100, 'long'), 95, 'default stop 5% below entry for longs');
 close(T.computeDefaultStop(100, 'short'), 105, 'default stop 5% above entry for shorts');

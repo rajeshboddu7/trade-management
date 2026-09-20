@@ -57,10 +57,16 @@ function cls(n) { return n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero'; }
 /** True if a trade has no exit price yet — still an open/holding position. */
 function isOpenTrade(t) { return t.exit == null || t.exit === ''; }
 
+/** Standard options contract size: entry/exit are per-share premium, but one contract controls
+ *  100 shares, so a $1 move in premium on 1 contract is a $100 swing, not $1. Stock trades (the
+ *  default — tradeType absent or 'stock') use qty as-is. */
+const OPTIONS_CONTRACT_MULTIPLIER = 100;
+function contractMultiplier(t) { return t.tradeType === 'options' ? OPTIONS_CONTRACT_MULTIPLIER : 1; }
+
 /** Net P/L: direction-aware, fees subtracted. null if the trade is still open (no exit price). */
 function pnlOf(t) {
   if (isOpenTrade(t)) return null;
-  const gross = (t.side === 'short' ? (t.entry - t.exit) : (t.exit - t.entry)) * t.qty;
+  const gross = (t.side === 'short' ? (t.entry - t.exit) : (t.exit - t.entry)) * t.qty * contractMultiplier(t);
   return gross - (t.fees || 0);
 }
 
@@ -69,7 +75,7 @@ function rOf(t) {
   const pnl = pnlOf(t);
   if (pnl == null) return null;
   if (t.stop == null || t.stop === '' || !isFinite(t.stop)) return null;
-  const risk = Math.abs(t.entry - t.stop) * t.qty;
+  const risk = Math.abs(t.entry - t.stop) * t.qty * contractMultiplier(t);
   if (risk <= 0) return null;
   return pnl / risk;
 }
@@ -190,7 +196,7 @@ function mergeById(local, cloud, deletedIds) {
 window.TradeMath = {
   CURRENCY, ymd, parseYmd, daysBetween, tradingDaysBetween,
   fmtMoney, fmtNum, cls,
-  isOpenTrade, pnlOf, rOf, daysInTrade, computeDefaultStop, calcUnrealized,
+  isOpenTrade, pnlOf, rOf, contractMultiplier, daysInTrade, computeDefaultStop, calcUnrealized,
   sortedEvents, derivePosition, isPositionTrade, trimToTrade, migratePositionId,
   mergeById,
 };
