@@ -10,4 +10,3 @@ if %errorlevel% equ 0 (
 ) else (
     echo Scan failed with exit code %errorlevel%. Scroll up to see the error.
 )
-pause
